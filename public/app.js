@@ -346,6 +346,10 @@ async function submitBet() {
     });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(data.error || "提交失败");
+    state.selected.clear();
+    state.passModes.clear();
+    persistState();
+    render();
     setSubmitStatus("提交成功，后台已记录", "success");
   } catch (error) {
     setSubmitStatus(error.message || "提交失败", "error");
