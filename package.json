@@ -1,0 +1,12 @@
+{
+  "name": "worldcup-odds-poc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "World Cup sports lottery odds PoC with local submission admin.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
