@@ -304,9 +304,17 @@ function formatChinaDate(date) {
 }
 
 function getTomorrowChinaDate() {
+  return getChinaDateOffset(1);
+}
+
+function getTodayChinaDate() {
+  return getChinaDateOffset(0);
+}
+
+function getChinaDateOffset(offsetDays) {
   const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  return formatChinaDate(tomorrow);
+  const target = new Date(now.getTime() + offsetDays * 24 * 60 * 60 * 1000);
+  return formatChinaDate(target);
 }
 
 async function fetchSourceHtml(url) {
@@ -421,7 +429,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (url.pathname === "/api/submissions" && req.method === "GET") {
-    const today = formatChinaDate(new Date());
+    const today = getTodayChinaDate();
     const submissions = readSubmissions()
       .filter((item) => formatChinaDate(new Date(item.submittedAt)) === today)
       .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
