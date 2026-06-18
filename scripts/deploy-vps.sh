@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/liqiang-0443/shijiebei.git}"
 APP_DIR="${APP_DIR:-/opt/shijiebei}"
 DATA_DIR="${DATA_DIR:-/data/shijiebei}"
-PORT="${PORT:-4318}"
+PORT="${PORT:-80}"
 IMAGE_NAME="${IMAGE_NAME:-shijiebei}"
 CONTAINER_NAME="${CONTAINER_NAME:-shijiebei}"
 
@@ -73,9 +73,16 @@ build_and_run() {
 
 print_result() {
   public_ip="$(curl -fsS --max-time 3 https://api.ipify.org || hostname -I | awk '{print $1}')"
+  if [ "${PORT}" = "80" ]; then
+    front_url="http://${public_ip}/"
+    admin_url="http://${public_ip}/admin.html"
+  else
+    front_url="http://${public_ip}:${PORT}/"
+    admin_url="http://${public_ip}:${PORT}/admin.html"
+  fi
   log "Deployment complete"
-  echo "Front: http://${public_ip}:${PORT}/"
-  echo "Admin: http://${public_ip}:${PORT}/admin.html"
+  echo "Front: ${front_url}"
+  echo "Admin: ${admin_url}"
   echo "Data dir: ${DATA_DIR}"
   echo
   echo "Useful commands:"

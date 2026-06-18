@@ -342,6 +342,20 @@ select {
   white-space: nowrap;
 }
 
+.submit-status.success {
+  color: #126b5f;
+  font-weight: 700;
+}
+
+.submit-status.error {
+  color: #b72521;
+  font-weight: 700;
+}
+
+.submit-status.hint {
+  color: #8a5b00;
+}
+
 #multiplierInput {
   width: 100%;
   max-width: 110px;

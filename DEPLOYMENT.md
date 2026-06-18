@@ -6,8 +6,8 @@
 
 访问地址：
 
-- 前台：`http://host:4318/`
-- 后台：`http://host:4318/admin.html`
+- 前台：`http://host/`
+- 后台：`http://host/admin.html`
 - 提交接口：`POST /api/submissions`
 - 后台数据接口：`GET /api/submissions`
 
@@ -64,6 +64,11 @@ curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts
 curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | env PORT=8080 bash
 ```
 
+默认会把外部 `80` 端口映射到容器内 `4318`，所以域名解析到 VPS IP 后可以直接访问：
+
+- 前台：`http://你的域名/`
+- 后台：`http://你的域名/admin.html`
+
 在 VPS 上安装 Docker 后执行：
 
 ```bash
@@ -74,7 +79,7 @@ docker build -t worldcup-odds-poc .
 docker run -d \
   --name worldcup-odds-poc \
   --restart unless-stopped \
-  -p 4318:4318 \
+  -p 80:4318 \
   -e PORT=4318 \
   -e DATA_DIR=/data \
   -v /data/worldcup-odds:/data \
@@ -91,7 +96,7 @@ docker rm -f worldcup-odds-poc
 docker run -d \
   --name worldcup-odds-poc \
   --restart unless-stopped \
-  -p 4318:4318 \
+  -p 80:4318 \
   -e PORT=4318 \
   -e DATA_DIR=/data \
   -v /data/worldcup-odds:/data \
@@ -100,8 +105,8 @@ docker run -d \
 
 访问：
 
-- 前台：`http://你的VPS-IP:4318/`
-- 后台：`http://你的VPS-IP:4318/admin.html`
+- 前台：`http://你的VPS-IP/`
+- 后台：`http://你的VPS-IP/admin.html`
 
 ## VPS 不用 Docker
 

@@ -292,7 +292,16 @@ function updateSummary() {
   el.payAmount.textContent = formatMoney(pay);
   el.bonusRange.textContent = `${formatMoney(minBonus)} - ${formatMoney(maxBonus)}`;
   el.clearSelectionBtn.disabled = selections.length === 0;
-  el.submitBetBtn.disabled = selections.length === 0 || tickets.length === 0;
+  const hasName = Boolean(getSubmitName());
+  el.submitBetBtn.disabled = selections.length === 0 || tickets.length === 0 || !hasName;
+  if (selections.length && tickets.length && !hasName && !el.submitStatus.textContent) {
+    setSubmitStatus("请选择姓名", "hint");
+  }
+}
+
+function setSubmitStatus(message, type = "") {
+  el.submitStatus.textContent = message;
+  el.submitStatus.className = `submit-status ${type}`.trim();
 }
 
 function getSubmitName() {
@@ -319,16 +328,16 @@ function submissionPayload() {
 async function submitBet() {
   const payload = submissionPayload();
   if (!payload.name) {
-    el.submitStatus.textContent = "请选择或填写姓名";
+    setSubmitStatus("请选择或填写姓名", "error");
     return;
   }
   if (!payload.selections.length || !payload.ticketCount) {
-    el.submitStatus.textContent = "请先选择有效玩法";
+    setSubmitStatus("请先选择有效玩法", "error");
     return;
   }
 
   el.submitBetBtn.disabled = true;
-  el.submitStatus.textContent = "提交中";
+  setSubmitStatus("提交中", "hint");
   try {
     const response = await fetch("/api/submissions", {
       method: "POST",
@@ -337,9 +346,9 @@ async function submitBet() {
     });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(data.error || "提交失败");
-    el.submitStatus.textContent = "已提交";
+    setSubmitStatus("提交成功，后台已记录", "success");
   } catch (error) {
-    el.submitStatus.textContent = error.message || "提交失败";
+    setSubmitStatus(error.message || "提交失败", "error");
   } finally {
     updateSummary();
   }
@@ -497,10 +506,12 @@ el.typeSelect.addEventListener("change", render);
 el.multiplierInput.addEventListener("input", updateSummary);
 el.nameSelect.addEventListener("change", () => {
   el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
-  el.submitStatus.textContent = "";
+  setSubmitStatus("");
+  updateSummary();
 });
 el.customNameInput.addEventListener("input", () => {
-  el.submitStatus.textContent = "";
+  setSubmitStatus("");
+  updateSummary();
 });
 el.submitBetBtn.addEventListener("click", submitBet);
 el.passModes.addEventListener("click", (event) => {
@@ -522,6 +533,7 @@ el.selectedPreview.addEventListener("click", (event) => {
 });
 el.clearSelectionBtn.addEventListener("click", () => {
   state.selected.clear();
+  setSubmitStatus("");
   render();
   updateSummary();
 });
@@ -545,6 +557,7 @@ el.matchList.addEventListener("click", (event) => {
       single,
     });
   }
+  setSubmitStatus("");
   render();
   updateSummary();
 });
