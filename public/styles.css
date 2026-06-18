@@ -303,16 +303,23 @@ select {
 
 .submit-row {
   display: grid;
-  grid-template-columns: 128px 128px auto minmax(72px, 1fr);
+  grid-template-columns: 140px 140px 92px minmax(90px, 1fr);
   gap: 8px;
   align-items: center;
+  padding: 8px;
+  border: 1px solid #e7edf3;
+  border-radius: 8px;
+  background: #fbfcfd;
 }
 
 #nameSelect,
 #customNameInput {
   width: 100%;
   min-width: 0;
-  height: 36px;
+  height: 38px;
+  border-color: #cfd8e3;
+  border-radius: 8px;
+  background-color: #fff;
 }
 
 #customNameInput {
@@ -324,13 +331,22 @@ select {
 }
 
 .submit-button {
-  width: auto;
-  min-width: 76px;
-  height: 36px;
-  border-color: #b72521;
-  background: #d8332f;
+  width: 92px;
+  min-width: 92px;
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #df3b31, #b72521);
+  box-shadow: 0 8px 18px rgba(216, 51, 47, 0.20);
   color: #fff;
   padding: 0 14px;
+  font-weight: 800;
+}
+
+.submit-button:disabled {
+  background: #d9e0e8;
+  box-shadow: none;
+  color: #7c8794;
 }
 
 .submit-status {
@@ -843,7 +859,8 @@ tbody tr:hover {
   }
 
   .submit-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 78px;
+    padding: 7px;
   }
 
   .submit-status {
@@ -1035,8 +1052,9 @@ tbody tr:hover {
   }
 
   .submit-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 62px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 68px;
     gap: 6px;
+    padding: 6px;
   }
 
   #nameSelect,
@@ -1046,8 +1064,8 @@ tbody tr:hover {
   }
 
   .submit-button {
-    width: 62px;
-    min-width: 62px;
+    width: 68px;
+    min-width: 68px;
     height: 34px;
     padding: 0 8px;
     font-size: 13px;

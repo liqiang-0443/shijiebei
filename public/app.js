@@ -119,10 +119,16 @@ function selectionKey(match, type, value) {
 }
 
 function normalizeMultiplier() {
-  const value = Math.floor(Number(el.multiplierInput.value));
-  const multiplier = Number.isFinite(value) && value > 0 ? Math.min(value, 9999) : 1;
-  el.multiplierInput.value = String(multiplier);
+  const multiplier = getMultiplier();
+  if (multiplier) el.multiplierInput.value = String(multiplier);
   return multiplier;
+}
+
+function getMultiplier() {
+  const raw = el.multiplierInput.value.trim();
+  if (!raw) return 0;
+  const value = Math.floor(Number(raw));
+  return Number.isFinite(value) && value > 0 ? Math.min(value, 9999) : 0;
 }
 
 function formatMoney(value) {
@@ -278,7 +284,7 @@ function renderSelectedPreview() {
 
 function updateSummary() {
   const selections = [...state.selected.values()];
-  const multiplier = normalizeMultiplier();
+  const multiplier = getMultiplier();
   normalizePassModes();
   persistState();
   const tickets = buildTickets(selections);
@@ -293,9 +299,12 @@ function updateSummary() {
   el.bonusRange.textContent = `${formatMoney(minBonus)} - ${formatMoney(maxBonus)}`;
   el.clearSelectionBtn.disabled = selections.length === 0;
   const hasName = Boolean(getSubmitName());
-  el.submitBetBtn.disabled = selections.length === 0 || tickets.length === 0 || !hasName;
+  const hasMultiplier = multiplier > 0;
+  el.submitBetBtn.disabled = selections.length === 0 || tickets.length === 0 || !hasName || !hasMultiplier;
   if (selections.length && tickets.length && !hasName && !el.submitStatus.textContent) {
     setSubmitStatus("请选择姓名", "hint");
+  } else if (selections.length && tickets.length && hasName && !hasMultiplier && !el.submitStatus.textContent) {
+    setSubmitStatus("请填写倍数", "hint");
   }
 }
 
@@ -315,7 +324,7 @@ function submissionPayload() {
   const tickets = buildTickets(selections);
   return {
     name: getSubmitName(),
-    multiplier: normalizeMultiplier(),
+    multiplier: getMultiplier(),
     passModes: [...state.passModes].sort((a, b) => a - b).map(passModeLabel),
     selectedCount: selections.length,
     ticketCount: tickets.length,
@@ -333,6 +342,10 @@ async function submitBet() {
   }
   if (!payload.selections.length || !payload.ticketCount) {
     setSubmitStatus("请先选择有效玩法", "error");
+    return;
+  }
+  if (!payload.multiplier) {
+    setSubmitStatus("请填写倍数", "error");
     return;
   }
 
@@ -508,6 +521,10 @@ el.refreshBtn.addEventListener("click", () => loadData(true));
 el.searchInput?.addEventListener("input", render);
 el.typeSelect.addEventListener("change", render);
 el.multiplierInput.addEventListener("input", updateSummary);
+el.multiplierInput.addEventListener("blur", () => {
+  normalizeMultiplier();
+  updateSummary();
+});
 el.nameSelect.addEventListener("change", () => {
   el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
   setSubmitStatus("");
