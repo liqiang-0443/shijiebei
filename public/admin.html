@@ -12,6 +12,20 @@
         <h1>今日提交记录</h1>
         <button id="adminRefreshBtn" type="button" class="refresh-button">刷新</button>
       </section>
+      <section class="admin-filters">
+        <label>
+          <span>提交人</span>
+          <select id="nameFilter">
+            <option value="">全部</option>
+          </select>
+        </label>
+        <label>
+          <span>类型</span>
+          <select id="typeFilter">
+            <option value="">全部</option>
+          </select>
+        </label>
+      </section>
       <section id="payerSummary" class="payer-summary"></section>
       <section id="submissionList" class="submission-list">
         <div class="panel-empty">正在读取</div>

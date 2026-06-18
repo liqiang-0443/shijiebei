@@ -1,6 +1,10 @@
 const listEl = document.querySelector("#submissionList");
 const summaryEl = document.querySelector("#payerSummary");
 const refreshBtn = document.querySelector("#adminRefreshBtn");
+const nameFilter = document.querySelector("#nameFilter");
+const typeFilter = document.querySelector("#typeFilter");
+
+let allSubmissions = [];
 
 const poolLabels = {
   nspf: "胜平负",
@@ -43,6 +47,38 @@ function groupSelectionsByMatch(selections) {
     groups.get(key).picks.push(pick);
   });
   return [...groups.values()];
+}
+
+function passModeBadges(modes) {
+  const values = modes && modes.length ? modes : ["-"];
+  return `<div class="pass-mode-badges">${values.map((mode) => `<span>${escapeHtml(mode)}</span>`).join("")}</div>`;
+}
+
+function populateFilters(submissions) {
+  const currentName = nameFilter.value;
+  const currentType = typeFilter.value;
+  const names = [...new Set(submissions.map((item) => item.name || "未命名"))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const types = [...new Set(submissions.flatMap((item) => item.passModes || []))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+
+  nameFilter.innerHTML = `<option value="">全部</option>${names.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+  typeFilter.innerHTML = `<option value="">全部</option>${types.map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join("")}`;
+
+  nameFilter.value = names.includes(currentName) ? currentName : "";
+  typeFilter.value = types.includes(currentType) ? currentType : "";
+}
+
+function filteredSubmissions() {
+  const name = nameFilter.value;
+  const type = typeFilter.value;
+  return allSubmissions.filter((item) => {
+    const nameOk = !name || (item.name || "未命名") === name;
+    const typeOk = !type || (item.passModes || []).includes(type);
+    return nameOk && typeOk;
+  });
+}
+
+function applyFilters() {
+  render(filteredSubmissions());
 }
 
 function renderPayerSummary(submissions) {
@@ -90,7 +126,7 @@ function render(submissions) {
           <span>${formatTime(item.submittedAt)}</span>
         </div>
         <div class="submission-money">
-          <span>${escapeHtml((item.passModes || []).join(" / ") || "-")}</span>
+          ${passModeBadges(item.passModes)}
           <strong>${Number(item.payAmount || 0).toFixed(2)} 元</strong>
         </div>
         <button class="delete-submission" type="button" data-delete-id="${escapeHtml(item.id)}">删除</button>
@@ -127,7 +163,9 @@ async function loadSubmissions() {
     const response = await fetch("/api/submissions", { cache: "no-store" });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(data.error || "读取失败");
-    render(data.submissions || []);
+    allSubmissions = data.submissions || [];
+    populateFilters(allSubmissions);
+    applyFilters();
   } catch (error) {
     listEl.innerHTML = `<div class="panel-empty">${escapeHtml(error.message || "读取失败")}</div>`;
   } finally {
@@ -137,6 +175,8 @@ async function loadSubmissions() {
 }
 
 refreshBtn.addEventListener("click", loadSubmissions);
+nameFilter.addEventListener("change", applyFilters);
+typeFilter.addEventListener("change", applyFilters);
 listEl.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete-id]");
   if (!button) return;

@@ -739,6 +739,28 @@ tbody tr:hover {
   font-size: 22px;
 }
 
+.admin-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 220px));
+  gap: 10px;
+  margin-bottom: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.admin-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-filters span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .submission-list {
   display: grid;
   gap: 10px;
@@ -861,11 +883,32 @@ tbody tr:hover {
 }
 
 .submission-money {
+  min-width: 118px;
   text-align: right;
 }
 
 .submission-money strong {
   color: #b72521;
+}
+
+.pass-mode-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.pass-mode-badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border: 1px solid #efbbb6;
+  border-radius: 999px;
+  background: #fff2f0;
+  color: #b72521;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .submission-meta {
@@ -1332,6 +1375,33 @@ tbody tr:hover {
 
   .panel-empty {
     margin: 0 10px;
+  }
+
+  .admin-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0 0 10px;
+    padding: 8px;
+  }
+
+  .submission-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .submission-money {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .pass-mode-badges {
+    justify-content: flex-start;
+  }
+
+  .delete-submission {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .submission-picks {
