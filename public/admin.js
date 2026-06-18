@@ -134,17 +134,18 @@ function render(submissions) {
       <div class="submission-meta">
         <span>已选 ${item.selectedCount || 0}</span>
         <span>注数 ${item.ticketCount || 0}</span>
-        <span>倍数 ${item.multiplier || 1}</span>
+        <span class="multiplier-pill">倍数 <b>${item.multiplier || 1}</b></span>
         <span>奖金 ${escapeHtml(item.bonusRange || "-")}</span>
       </div>
       <div class="submission-picks">
         ${groupSelectionsByMatch(item.selections).map((group) => `
           <section class="submission-match">
-            <h3>${escapeHtml(group.matchNum)} ${escapeHtml(group.teams)}</h3>
+            <h3><em>${escapeHtml(String(group.matchNum || "").replace(/[^\d]/g, "") || group.matchNum)}</em><span>${escapeHtml(group.teams)}</span></h3>
             <div>
               ${group.picks.map((pick) => `
-                <span>
-                  ${escapeHtml(poolLabels[pick.pool] || pick.pool)} ${escapeHtml(pick.label)}
+                <span class="pick-pill">
+                  <i>${escapeHtml(poolLabels[pick.pool] || pick.pool)}</i>
+                  <strong>${escapeHtml(pick.label)}</strong>
                   <b>${Number(pick.sp || 0).toFixed(2)}</b>
                 </span>
               `).join("")}

@@ -923,6 +923,19 @@ tbody tr:hover {
   background: #f1f4f7;
 }
 
+.submission-meta .multiplier-pill {
+  border: 1px solid #f0b7b2;
+  background: #fff2f0;
+  color: #b72521;
+  font-weight: 800;
+}
+
+.multiplier-pill b {
+  margin-left: 3px;
+  font-size: 18px;
+  line-height: 1;
+}
+
 .submission-picks {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -940,10 +953,34 @@ tbody tr:hover {
 }
 
 .submission-match h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.submission-match h3 em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 26px;
+  border-radius: 6px;
+  background: #13211f;
+  color: #fff;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.submission-match h3 span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -954,20 +991,47 @@ tbody tr:hover {
   gap: 5px;
 }
 
-.submission-match span {
+.pick-pill {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 5px;
+  align-items: baseline;
   max-width: 100%;
+  min-height: 34px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #fff;
   border: 1px solid #e4eaf1;
-  padding: 4px 7px;
+  padding: 6px 7px;
+  text-overflow: ellipsis;
+}
+
+.pick-pill i,
+.pick-pill strong,
+.pick-pill b {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.submission-match b {
-  margin-left: 4px;
+.pick-pill i {
+  color: #44505e;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.pick-pill strong {
   color: var(--text);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.pick-pill b {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 @media (max-width: 860px) {
@@ -1406,5 +1470,17 @@ tbody tr:hover {
 
   .submission-picks {
     grid-template-columns: 1fr;
+  }
+
+  .pick-pill {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .pick-pill i {
+    font-size: 12px;
+  }
+
+  .pick-pill strong {
+    font-size: 16px;
   }
 }
