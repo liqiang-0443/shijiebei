@@ -28,6 +28,22 @@ function formatTime(value) {
   }).format(new Date(value));
 }
 
+function groupSelectionsByMatch(selections) {
+  const groups = new Map();
+  (selections || []).forEach((pick) => {
+    const key = pick.matchKey || `${pick.matchNum}-${pick.teams}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        matchNum: pick.matchNum,
+        teams: pick.teams,
+        picks: [],
+      });
+    }
+    groups.get(key).picks.push(pick);
+  });
+  return [...groups.values()];
+}
+
 function render(submissions) {
   if (!submissions.length) {
     listEl.innerHTML = '<div class="panel-empty">暂无提交记录</div>';
@@ -54,11 +70,18 @@ function render(submissions) {
         <span>奖金 ${escapeHtml(item.bonusRange || "-")}</span>
       </div>
       <div class="submission-picks">
-        ${(item.selections || []).map((pick) => `
-          <span>
-            ${escapeHtml(pick.matchNum)} ${escapeHtml(pick.teams)}
-            <b>${escapeHtml(poolLabels[pick.pool] || pick.pool)} ${escapeHtml(pick.label)} ${Number(pick.sp || 0).toFixed(2)}</b>
-          </span>
+        ${groupSelectionsByMatch(item.selections).map((group) => `
+          <section class="submission-match">
+            <h3>${escapeHtml(group.matchNum)} ${escapeHtml(group.teams)}</h3>
+            <div>
+              ${group.picks.map((pick) => `
+                <span>
+                  ${escapeHtml(poolLabels[pick.pool] || pick.pool)} ${escapeHtml(pick.label)}
+                  <b>${Number(pick.sp || 0).toFixed(2)}</b>
+                </span>
+              `).join("")}
+            </div>
+          </section>
         `).join("")}
       </div>
     </article>

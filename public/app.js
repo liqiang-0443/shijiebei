@@ -84,6 +84,13 @@ const poolOrder = {
   ],
 };
 
+function initMultiplierOptions() {
+  el.multiplierInput.innerHTML = Array.from({ length: 50 }, (_, index) => {
+    const value = String(index + 1);
+    return `<option value="${value}" ${value === "1" ? "selected" : ""}>${value}</option>`;
+  }).join("");
+}
+
 function formatTime(value) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("zh-CN", {
@@ -120,16 +127,14 @@ function selectionKey(match, type, value) {
 }
 
 function normalizeMultiplier() {
-  const multiplier = getMultiplier();
-  if (multiplier) el.multiplierInput.value = String(multiplier);
-  return multiplier;
+  return getMultiplier();
 }
 
 function getMultiplier() {
   const raw = el.multiplierInput.value.trim();
   if (!raw) return 0;
   const value = Math.floor(Number(raw));
-  return Number.isFinite(value) && value > 0 ? Math.min(value, 9999) : 0;
+  return Number.isFinite(value) && value > 0 ? Math.min(value, 50) : 0;
 }
 
 function formatMoney(value) {
@@ -521,11 +526,7 @@ async function loadData(force = false) {
 el.refreshBtn.addEventListener("click", () => loadData(true));
 el.searchInput?.addEventListener("input", render);
 el.typeSelect.addEventListener("change", render);
-el.multiplierInput.addEventListener("input", updateSummary);
-el.multiplierInput.addEventListener("blur", () => {
-  normalizeMultiplier();
-  updateSummary();
-});
+el.multiplierInput.addEventListener("change", updateSummary);
 el.nameSelect.addEventListener("change", () => {
   el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
   setSubmitStatus("");
@@ -585,5 +586,6 @@ el.matchList.addEventListener("click", (event) => {
 });
 
 el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
+initMultiplierOptions();
 loadData();
 setInterval(loadData, 60 * 1000);
