@@ -1023,7 +1023,7 @@ tbody tr:hover {
 }
 
 .pick-pill strong {
-  color: var(--text);
+  color: #b72521;
   font-size: 17px;
   font-weight: 900;
 }
