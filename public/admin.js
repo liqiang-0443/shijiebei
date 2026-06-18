@@ -1,4 +1,5 @@
 const listEl = document.querySelector("#submissionList");
+const summaryEl = document.querySelector("#payerSummary");
 const refreshBtn = document.querySelector("#adminRefreshBtn");
 
 const poolLabels = {
@@ -44,7 +45,38 @@ function groupSelectionsByMatch(selections) {
   return [...groups.values()];
 }
 
+function renderPayerSummary(submissions) {
+  const summary = new Map();
+  submissions.forEach((item) => {
+    const name = item.name || "未命名";
+    const current = summary.get(name) || { name, count: 0, amount: 0 };
+    current.count += 1;
+    current.amount += Number(item.payAmount || 0);
+    summary.set(name, current);
+  });
+
+  const rows = [...summary.values()].sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name, "zh-CN"));
+  const total = rows.reduce((sum, item) => sum + item.amount, 0);
+
+  summaryEl.innerHTML = `
+    <div class="payer-summary-head">
+      <strong>今日应付汇总</strong>
+      <span>合计 ${total.toFixed(2)} 元</span>
+    </div>
+    <div class="payer-summary-list">
+      ${rows.length ? rows.map((item) => `
+        <div class="payer-summary-item">
+          <span>${escapeHtml(item.name)}</span>
+          <strong>${item.amount.toFixed(2)} 元</strong>
+          <em>${item.count} 单</em>
+        </div>
+      `).join("") : '<div class="payer-summary-empty">暂无提交</div>'}
+    </div>
+  `;
+}
+
 function render(submissions) {
+  renderPayerSummary(submissions);
   if (!submissions.length) {
     listEl.innerHTML = '<div class="panel-empty">暂无提交记录</div>';
     return;

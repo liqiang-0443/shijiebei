@@ -744,6 +744,75 @@ tbody tr:hover {
   gap: 10px;
 }
 
+.payer-summary {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.payer-summary-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payer-summary-head strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.payer-summary-head span {
+  color: #b72521;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.payer-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.payer-summary-item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid #e4eaf1;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fbfcfd;
+}
+
+.payer-summary-item span,
+.payer-summary-item strong,
+.payer-summary-item em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payer-summary-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.payer-summary-item strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.payer-summary-item em,
+.payer-summary-empty {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
 .submission-card {
   display: grid;
   gap: 10px;
