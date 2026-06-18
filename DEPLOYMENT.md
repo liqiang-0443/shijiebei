@@ -46,6 +46,24 @@ PORT=4318 DATA_DIR=/data/worldcup-odds pm2 start server.js --name worldcup-odds
 
 ## VPS Docker 部署
 
+一键部署，适合砖瓦工 Ubuntu/Debian/CentOS VPS：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | bash
+```
+
+如果不是 root 用户：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | sudo bash
+```
+
+自定义端口：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | env PORT=8080 bash
+```
+
 在 VPS 上安装 Docker 后执行：
 
 ```bash
