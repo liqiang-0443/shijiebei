@@ -760,6 +760,18 @@ tbody tr:hover {
   justify-content: space-between;
 }
 
+.delete-submission {
+  width: auto;
+  min-width: 58px;
+  height: 30px;
+  border: 1px solid #efbbb6;
+  background: #fff8f7;
+  color: #b72521;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .submission-head > div,
 .submission-money {
   display: grid;

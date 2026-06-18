@@ -441,6 +441,18 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
+  if (url.pathname.startsWith("/api/submissions/") && req.method === "DELETE") {
+    const id = decodeURIComponent(url.pathname.replace("/api/submissions/", ""));
+    const submissions = readSubmissions();
+    const next = submissions.filter((item) => item.id !== id);
+    if (next.length === submissions.length) {
+      sendJson(res, { ok: false, error: "submission not found" }, 404);
+      return;
+    }
+    writeSubmissions(next);
+    sendJson(res, { ok: true, id });
+    return;
+  }
   sendStatic(req, res);
 });
 

@@ -44,6 +44,7 @@ function render(submissions) {
           <span>${escapeHtml((item.passModes || []).join(" / ") || "-")}</span>
           <strong>${Number(item.payAmount || 0).toFixed(2)} 元</strong>
         </div>
+        <button class="delete-submission" type="button" data-delete-id="${escapeHtml(item.id)}">删除</button>
       </div>
       <div class="submission-meta">
         <span>已选 ${item.selectedCount || 0}</span>
@@ -80,4 +81,25 @@ async function loadSubmissions() {
 }
 
 refreshBtn.addEventListener("click", loadSubmissions);
+listEl.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-id]");
+  if (!button) return;
+  const confirmed = window.confirm("确认删除这条提交记录？");
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = "删除中";
+  try {
+    const response = await fetch(`/api/submissions/${encodeURIComponent(button.dataset.deleteId)}`, {
+      method: "DELETE",
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.error || "删除失败");
+    await loadSubmissions();
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "删除";
+    alert(error.message || "删除失败");
+  }
+});
 loadSubmissions();
