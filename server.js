@@ -4,8 +4,11 @@ const path = require("path");
 const {
   formatChinaDate,
   getChinaDateOffset,
+  getAnalysisSlot,
 } = require("./lib/china-time");
 const { parseLiveMatches, livePayload } = require("./lib/live-results");
+const { shouldRunAnalysis } = require("./lib/analysis-schedule");
+const { generateAnalysisSnapshot } = require("./lib/analysis-service");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -34,6 +37,7 @@ let cache = {
   previousByKey: {},
 };
 let liveCache = livePayload([], null, "live data has not been synchronized");
+let analysisCache = { status: "unavailable", reason: "analysis has not been generated" };
 
 function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -94,6 +98,30 @@ function writeLiveCache(date, payload) {
   const file = getLiveFile(date);
   const temp = `${file}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(payload, null, 2), "utf8");
+  fs.renameSync(temp, file);
+}
+
+function getAnalysisFile(date) {
+  return path.join(DATA_DIR, `analysis-${date}.json`);
+}
+
+function readAnalysisStore(date) {
+  ensureDataDir();
+  const file = getAnalysisFile(date);
+  if (!fs.existsSync(file)) return { date, snapshots: [] };
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return Array.isArray(parsed.snapshots) ? parsed : { date, snapshots: [] };
+  } catch {
+    return { date, snapshots: [] };
+  }
+}
+
+function writeAnalysisStore(date, store) {
+  ensureDataDir();
+  const file = getAnalysisFile(date);
+  const temp = `${file}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(store, null, 2), "utf8");
   fs.renameSync(temp, file);
 }
 
@@ -421,6 +449,75 @@ async function refreshLiveResults() {
   }
 }
 
+function buildAnalysisFacts() {
+  return cache.matches.map((match) => ({
+    key: match.key,
+    matchNum: match.matchNum,
+    home: match.home,
+    away: match.away,
+    matchDate: match.matchDate,
+    matchTime: match.matchTime,
+    handicap: match.rangqiu,
+    odds: match.odds,
+    statistics: {
+      worldCupRanking: null,
+      tournamentRecord: null,
+      recentForm: null,
+      headToHead: null,
+    },
+    dataGaps: ["球队统计数据源尚未同步，本版仅基于赔率快照。"],
+  }));
+}
+
+function latestAnalysis(store) {
+  return store.snapshots.at(-1) || {
+    status: "unavailable",
+    reason: "analysis has not been generated",
+    date: store.date,
+  };
+}
+
+async function refreshAnalysis() {
+  const date = getTomorrowChinaDate();
+  const slot = getAnalysisSlot();
+  const store = readAnalysisStore(date);
+  if (!shouldRunAnalysis(store.snapshots, slot, { retryNoMatches: cache.matches.length > 0 })) {
+    analysisCache = latestAnalysis(store);
+    return analysisCache;
+  }
+
+  try {
+    const facts = buildAnalysisFacts();
+    const snapshot = facts.length
+      ? await generateAnalysisSnapshot({
+        apiKey: process.env.OPENAI_API_KEY || "",
+        facts,
+        slot,
+        model: process.env.OPENAI_MODEL || undefined,
+      })
+      : { status: "unavailable", reason: "no tomorrow World Cup matches", slot };
+    const record = {
+      ...snapshot,
+      date,
+      dataUpdatedAt: cache.fetchedAt || null,
+      facts,
+    };
+    store.snapshots.push(record);
+    store.snapshots = store.snapshots.slice(-18);
+    writeAnalysisStore(date, store);
+    analysisCache = record;
+    return analysisCache;
+  } catch (error) {
+    const previous = latestAnalysis(store);
+    analysisCache = {
+      ...previous,
+      stale: true,
+      error: error.message || String(error),
+    };
+    return analysisCache;
+  }
+}
+
 function sendJson(res, data, status = 200) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
@@ -471,6 +568,10 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, liveCache);
     return;
   }
+  if (url.pathname === "/api/match-analysis" && req.method === "GET") {
+    sendJson(res, analysisCache);
+    return;
+  }
   if (url.pathname === "/api/submissions" && req.method === "GET") {
     const today = getTodayChinaDate();
     const submissions = readSubmissions()
@@ -509,7 +610,9 @@ const server = http.createServer(async (req, res) => {
 
 ensureDataDir();
 liveCache = readLiveCache(getTodayChinaDate()) || liveCache;
-Promise.all([refreshData(), refreshLiveResults()]).then(() => {
+analysisCache = latestAnalysis(readAnalysisStore(getTomorrowChinaDate()));
+refreshData().then(async () => {
+  await Promise.all([refreshLiveResults(), refreshAnalysis()]);
   server.listen(PORT, () => {
     console.log(`World Cup odds PoC running at http://localhost:${PORT}`);
   });
@@ -517,3 +620,4 @@ Promise.all([refreshData(), refreshLiveResults()]).then(() => {
 
 setInterval(refreshData, 5 * 60 * 1000);
 setInterval(refreshLiveResults, 60 * 1000);
+setInterval(refreshAnalysis, 60 * 1000);
