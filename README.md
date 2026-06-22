@@ -37,4 +37,5 @@ minutes, live scores every minute, and analysis snapshots every four hours in
 Beijing time.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for VPS configuration, including the optional
-server-only `OPENAI_API_KEY` required to generate analysis snapshots.
+server-only `DEEPSEEK_API_KEY` required to generate analysis snapshots with
+`deepseek-v4-pro`.

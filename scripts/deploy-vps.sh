@@ -67,10 +67,22 @@ build_and_run() {
     -p "${PORT}:4318" \
     -e PORT=4318 \
     -e DATA_DIR=/data \
-    -e OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
-    -e OPENAI_MODEL="${OPENAI_MODEL:-gpt-5.5}" \
+    -e DEEPSEEK_API_KEY="${DEEPSEEK_API_KEY:-}" \
+    -e DEEPSEEK_MODEL="${DEEPSEEK_MODEL:-deepseek-v4-pro}" \
     -v "${DATA_DIR}:/data" \
     "${IMAGE_NAME}"
+}
+
+trigger_analysis_after_deploy() {
+  log "Triggering deployment analysis snapshot"
+  for attempt in $(seq 1 20); do
+    if docker exec "${CONTAINER_NAME}" wget -qO- --post-data='' http://127.0.0.1:4318/api/analysis/deploy >/dev/null 2>&1; then
+      log "Analysis snapshot triggered"
+      return
+    fi
+    sleep 1
+  done
+  log "Analysis trigger did not complete; the next scheduled analysis will retry"
 }
 
 print_result() {
@@ -93,4 +105,5 @@ require_root
 install_packages
 sync_code
 build_and_run
+trigger_analysis_after_deploy
 print_result

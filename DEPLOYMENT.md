@@ -166,13 +166,14 @@ sudo systemctl status worldcup-odds
 # World Cup Workbench Deployment
 
 The application now uses one workbench URL for live scores, analysis, selections,
-and today's records. The analysis tab requires an OpenAI API key; without one,
+and today's records. The analysis tab requires a DeepSeek API key; without one,
 all other tabs still work and the analysis tab reports that no analysis is available.
 
 ```bash
-export OPENAI_API_KEY='replace-with-your-key'
+export DEEPSEEK_API_KEY='replace-with-your-key'
 curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | bash
 ```
 
 The script keeps submissions and analysis snapshots in `/data/shijiebei` across
-redeployments. Do not commit the key or place it in browser code.
+redeployments. Each deployment triggers one analysis snapshot after the container
+is ready. Do not commit the key or place it in browser code.

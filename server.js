@@ -477,11 +477,11 @@ function latestAnalysis(store) {
   };
 }
 
-async function refreshAnalysis() {
+async function refreshAnalysis({ force = false } = {}) {
   const date = getTomorrowChinaDate();
   const slot = getAnalysisSlot();
   const store = readAnalysisStore(date);
-  if (!shouldRunAnalysis(store.snapshots, slot, { retryNoMatches: cache.matches.length > 0 })) {
+  if (!force && !shouldRunAnalysis(store.snapshots, slot, { retryNoMatches: cache.matches.length > 0 })) {
     analysisCache = latestAnalysis(store);
     return analysisCache;
   }
@@ -490,10 +490,10 @@ async function refreshAnalysis() {
     const facts = buildAnalysisFacts();
     const snapshot = facts.length
       ? await generateAnalysisSnapshot({
-        apiKey: process.env.OPENAI_API_KEY || "",
+        apiKey: process.env.DEEPSEEK_API_KEY || "",
         facts,
         slot,
-        model: process.env.OPENAI_MODEL || undefined,
+        model: process.env.DEEPSEEK_MODEL || undefined,
       })
       : { status: "unavailable", reason: "no tomorrow World Cup matches", slot };
     const record = {
@@ -525,6 +525,10 @@ function sendJson(res, data, status = 200) {
     "Cache-Control": "no-store",
   });
   res.end(body);
+}
+
+function isLoopback(address) {
+  return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
 }
 
 function sendStatic(req, res) {
@@ -570,6 +574,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === "/api/match-analysis" && req.method === "GET") {
     sendJson(res, analysisCache);
+    return;
+  }
+  if (url.pathname === "/api/analysis/deploy" && req.method === "POST") {
+    if (!isLoopback(req.socket.remoteAddress)) {
+      sendJson(res, { ok: false, error: "forbidden" }, 403);
+      return;
+    }
+    sendJson(res, await refreshAnalysis({ force: true }));
     return;
   }
   if (url.pathname === "/api/submissions" && req.method === "GET") {
