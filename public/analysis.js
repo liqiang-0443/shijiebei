@@ -53,10 +53,11 @@
     const recent = stats.recentForm || {};
     const gaps = Array.isArray(dataGaps) ? dataGaps : [];
     return `<section class="intel-panel">
-      <div><span>FIFA排名</span><strong>${ranking ? `${escapeHtml(ranking.home)} / ${escapeHtml(ranking.away)}` : "暂无"}</strong></div>
+      <div><span>FIFA排名</span><strong class="fifa-rank">${ranking ? `${escapeHtml(ranking.home)} / ${escapeHtml(ranking.away)}` : "暂无"}</strong></div>
       <div class="record-table-wrap"><span>本届战绩</span>${recordTable(stats.tournamentTable)}</div>
       <div><span>近期赛果</span>${infoList([...(recent.home || []), ...(recent.away || [])].slice(0, 4))}</div>
-      <div><span>历史交锋</span>${infoList(stats.headToHead)}</div>
+      <div><span>近五年国际赛事交锋</span>${infoList(stats.headToHead)}</div>
+      <div><span>伤停信息</span>${stats.injuries ? infoList(stats.injuries) : "<em>暂无可靠公开数据</em>"}</div>
       ${gaps.length ? `<p>${gaps.map(escapeHtml).join("；")}</p>` : ""}
     </section>`;
   }

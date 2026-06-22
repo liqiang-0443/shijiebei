@@ -2,12 +2,16 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const {
-  formatChinaDate,
   getChinaDateOffset,
   getAnalysisSlot,
   isAnalysisDue,
 } = require("./lib/china-time");
-const { livePayload, normalizeTheSportsDbEvent } = require("./lib/live-results");
+const {
+  livePayload,
+  normalizeTheSportsDbEvent,
+  worldCupEventsForChinaDate,
+  chinaDateTime,
+} = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot, generateFallbackAnalysisSnapshot } = require("./lib/analysis-service");
 const { latestSnapshotForDate } = require("./lib/odds-cache");
@@ -24,7 +28,6 @@ const SOURCES = [
 ];
 const SOURCE_URL = SOURCES[0].url;
 const SPORTS_DB_BASE = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php";
-const SPORTS_DB_SEARCH_BASE = "https://www.thesportsdb.com/api/v1/json/3/searchevents.php";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -42,23 +45,6 @@ let cache = {
 };
 let liveCache = livePayload([], null, "live data has not been synchronized");
 let analysisCache = { status: "unavailable", reason: "analysis has not been generated" };
-
-const LIVE_TEAM_NAMES = {
-  "阿根廷": "Argentina",
-  "奥地利": "Austria",
-  "法国": "France",
-  "伊拉克": "Iraq",
-  "挪威": "Norway",
-  "塞内加尔": "Senegal",
-  "约旦": "Jordan",
-  "阿尔及利亚": "Algeria",
-  "比利时": "Belgium",
-  "伊朗": "Iran",
-  "新西兰": "New Zealand",
-  "埃及": "Egypt",
-  "英格兰": "England",
-  "加纳": "Ghana",
-};
 
 function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -126,11 +112,6 @@ function writeSubmissions(submissions) {
 
 function getLiveFile(date) {
   return path.join(DATA_DIR, `live-${date}.json`);
-}
-
-function alignDisplayDate(match, date) {
-  if (!match.scheduledAt || match.scheduledAt.startsWith(date)) return match;
-  return { ...match, scheduledAt: `${date} ${match.scheduledAt.slice(11)}` };
 }
 
 function readLiveCache(date) {
@@ -491,12 +472,6 @@ async function refreshData() {
 
 async function refreshLiveResults() {
   const date = getTodayChinaDate();
-  const historyToday = latestSnapshotForDate(readHistory(), date);
-  const expectedToday = [
-    ...cache.matches.filter((match) => match.matchDate === date),
-    ...((historyToday?.matches || []).filter((match) => match.matchDate === date)),
-  ];
-  const expectedMatches = expectedToday;
   const refreshedAt = new Date().toISOString();
   try {
     const target = new Date(`${date}T12:00:00.000Z`);
@@ -511,42 +486,14 @@ async function refreshLiveResults() {
       const body = await response.json();
       return Array.isArray(body.events) ? body.events : [];
     };
-    const searchExpectedEvent = async (match) => {
-      const home = LIVE_TEAM_NAMES[match.home] || match.home;
-      const away = LIVE_TEAM_NAMES[match.away] || match.away;
-      const query = `${home}_vs_${away}`;
-      const response = await fetch(`${SPORTS_DB_SEARCH_BASE}?e=${encodeURIComponent(query)}`, {
-        headers: { "User-Agent": "WorldCupOddsPoc/1.0" },
-      });
-      if (!response.ok) return [];
-      const body = await response.json();
-      return Array.isArray(body.event) ? body.event : [];
-    };
     const payloads = [];
     for (const sourceDate of sourceDates) payloads.push(await fetchEventsDay(sourceDate));
-    if (expectedMatches.length) {
-      for (const match of expectedMatches) payloads.push(await searchExpectedEvent(match));
-    }
     const byKey = new Map();
-    payloads.flat().forEach((event) => {
-      if (event.strLeague !== "FIFA World Cup") return;
-      const timestamp = event.strTimestamp ? new Date(`${event.strTimestamp}Z`) : null;
-      if (!timestamp || formatChinaDate(timestamp) !== date) return;
+    worldCupEventsForChinaDate(payloads.flat(), date).forEach((event) => {
       const match = normalizeTheSportsDbEvent(event);
       byKey.set(match.key, match);
     });
-    let matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-    if (matches.length < 4) {
-      const targetEnd = new Date(`${date}T16:00:00.000Z`);
-      matches = payloads
-        .flat()
-        .filter((event) => event.strLeague === "FIFA World Cup" && event.strTimestamp)
-        .filter((event) => new Date(`${event.strTimestamp}Z`) <= targetEnd)
-        .sort((a, b) => new Date(`${b.strTimestamp}Z`) - new Date(`${a.strTimestamp}Z`))
-        .slice(0, 4)
-        .map((event) => alignDisplayDate(normalizeTheSportsDbEvent(event), date))
-        .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-    }
+    const matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
     const payload = {
       ...livePayload(matches, refreshedAt),
       date,
@@ -555,7 +502,13 @@ async function refreshLiveResults() {
     liveCache = payload;
     return liveCache;
   } catch (error) {
-    const fallback = liveCache.date === date ? liveCache : readLiveCache(date);
+    const cached = liveCache.date === date ? liveCache : readLiveCache(date);
+    const fallback = cached && {
+      ...cached,
+      matches: (cached.matches || []).filter((match) => (
+        !match.sourceTimestamp || chinaDateTime(match.sourceTimestamp).slice(0, 10) === date
+      )),
+    };
     liveCache = {
       ...(fallback || { date, matches: [], updatedAt: null }),
       ok: false,

@@ -1664,6 +1664,12 @@ tbody tr:hover {
   overflow-wrap: anywhere;
 }
 
+.intel-panel .fifa-rank {
+  color: #b72521;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 .intel-panel ul {
   display: grid;
   gap: 3px;

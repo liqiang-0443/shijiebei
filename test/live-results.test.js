@@ -6,6 +6,7 @@ const {
   parseLiveMatches,
   normalizeTheSportsDbEvent,
   formatLiveProgress,
+  worldCupEventsForChinaDate,
 } = require("../lib/live-results");
 
 test("normalizes a live score and minute", () => {
@@ -87,4 +88,14 @@ test("formats live progress by match stage and minute", () => {
   assert.equal(formatLiveProgress({ status: "halftime" }), "中场休息");
   assert.equal(formatLiveProgress({ status: "second_half", minute: 62 }), "下半场 62'");
   assert.equal(formatLiveProgress({ status: "scheduled" }), "未开始");
+});
+
+test("keeps only World Cup events whose source time is Beijing today", () => {
+  const matches = worldCupEventsForChinaDate([
+    { idEvent: "yesterday", strLeague: "FIFA World Cup", strTimestamp: "2026-06-21T00:00:00" },
+    { idEvent: "today", strLeague: "FIFA World Cup", strTimestamp: "2026-06-21T19:00:00" },
+    { idEvent: "other", strLeague: "Friendly", strTimestamp: "2026-06-22T01:00:00" },
+  ], "2026-06-22");
+
+  assert.deepEqual(matches.map((event) => event.idEvent), ["today"]);
 });
