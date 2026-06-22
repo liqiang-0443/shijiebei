@@ -29,3 +29,12 @@ npm start
 ## 部署
 
 见 `DEPLOYMENT.md`。
+# World Cup Workbench
+
+Open the root URL for four tabs: live scores, tomorrow's analysis, tomorrow's
+selection, and today's submitted selections. The server refreshes odds every five
+minutes, live scores every minute, and analysis snapshots every four hours in
+Beijing time.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for VPS configuration, including the optional
+server-only `OPENAI_API_KEY` required to generate analysis snapshots.

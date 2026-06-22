@@ -67,6 +67,8 @@ build_and_run() {
     -p "${PORT}:4318" \
     -e PORT=4318 \
     -e DATA_DIR=/data \
+    -e OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+    -e OPENAI_MODEL="${OPENAI_MODEL:-gpt-5.5}" \
     -v "${DATA_DIR}:/data" \
     "${IMAGE_NAME}"
 }
@@ -75,14 +77,11 @@ print_result() {
   public_ip="$(curl -fsS --max-time 3 https://api.ipify.org || hostname -I | awk '{print $1}')"
   if [ "${PORT}" = "80" ]; then
     front_url="http://${public_ip}/"
-    admin_url="http://${public_ip}/admin.html"
   else
     front_url="http://${public_ip}:${PORT}/"
-    admin_url="http://${public_ip}:${PORT}/admin.html"
   fi
   log "Deployment complete"
   echo "Front: ${front_url}"
-  echo "Admin: ${admin_url}"
   echo "Data dir: ${DATA_DIR}"
   echo
   echo "Useful commands:"

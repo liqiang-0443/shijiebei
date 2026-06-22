@@ -3,108 +3,92 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>竞彩奖金监测 PoC</title>
+    <title>世界杯工作台</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
-  <body>
-    <main>
-      <section class="status-grid">
-        <div class="metric">
-          <span>数据状态</span>
-          <strong id="statusText">读取中</strong>
-        </div>
-        <div class="metric">
-          <span>比赛数量</span>
-          <strong id="matchCount">-</strong>
-        </div>
-        <div class="metric">
-          <span>最近更新</span>
-          <strong id="updatedAt">-</strong>
-        </div>
+  <body class="workbench-page">
+    <main class="workbench">
+      <nav class="tab-bar" aria-label="世界杯工作台">
+        <button type="button" data-tab="live" class="tab-button is-active" aria-selected="true">实时赛况</button>
+        <button type="button" data-tab="analysis" class="tab-button" aria-selected="false">明日情报</button>
+        <button type="button" data-tab="selection" class="tab-button" aria-selected="false">明日选单</button>
+        <button type="button" data-tab="submissions" class="tab-button" aria-selected="false">选单结果</button>
+      </nav>
+
+      <section class="tab-panel" data-panel="live">
+        <section class="tab-heading">
+          <div>
+            <h1>实时赛况</h1>
+            <p id="liveUpdatedAt">正在读取今日世界杯赛况</p>
+          </div>
+        </section>
+        <section id="liveMatchList" class="live-match-list">
+          <div class="panel-empty">正在读取</div>
+        </section>
       </section>
 
-      <section class="toolbar">
-        <label>
-          <span>玩法</span>
-          <select id="typeSelect">
-            <option value="all">全部</option>
-            <option value="nspf">胜平负</option>
-            <option value="spf">让球胜平负</option>
-            <option value="jqs">总进球数</option>
-            <option value="bqc">半全场</option>
-            <option value="bf">比分</option>
-            <option value="mixed">混合过关</option>
-          </select>
-        </label>
-        <button id="refreshBtn" type="button" class="refresh-button">刷新</button>
+      <section class="tab-panel" data-panel="analysis" hidden>
+        <section class="tab-heading">
+          <div>
+            <h1>明日情报</h1>
+            <p id="analysisUpdatedAt">正在读取明日分析</p>
+          </div>
+        </section>
+        <section id="analysisMatchList" class="analysis-match-list">
+          <div class="panel-empty">正在读取</div>
+        </section>
       </section>
 
-      <section class="bet-summary" id="betSummary">
-        <div class="summary-top">
-          <div class="pass-modes" id="passModes"></div>
-          <button id="clearSelectionBtn" type="button" class="ghost-button">清空</button>
-        </div>
-        <div class="selected-preview" id="selectedPreview"></div>
-        <div class="summary-main">
-          <div>
-            <span>已选</span>
-            <strong id="selectedCount">0</strong>
+      <section class="tab-panel selection-panel" data-panel="selection" hidden>
+        <section class="status-grid">
+          <div class="metric"><span>数据状态</span><strong id="statusText">读取中</strong></div>
+          <div class="metric"><span>比赛数量</span><strong id="matchCount">-</strong></div>
+          <div class="metric"><span>最近更新</span><strong id="updatedAt">-</strong></div>
+        </section>
+
+        <section class="toolbar">
+          <label>
+            <span>玩法</span>
+            <select id="typeSelect">
+              <option value="all">全部</option><option value="nspf">胜平负</option><option value="spf">让球胜平负</option>
+              <option value="jqs">总进球数</option><option value="bqc">半全场</option><option value="bf">比分</option><option value="mixed">混合过关</option>
+            </select>
+          </label>
+          <button id="refreshBtn" type="button" class="refresh-button">刷新</button>
+        </section>
+
+        <section class="bet-summary" id="betSummary">
+          <div class="summary-top"><div class="pass-modes" id="passModes"></div><button id="clearSelectionBtn" type="button" class="ghost-button">清空</button></div>
+          <div class="selected-preview" id="selectedPreview"></div>
+          <div class="summary-main">
+            <div><span>已选</span><strong id="selectedCount">0</strong></div><div><span>注数</span><strong id="ticketCount">0</strong></div>
+            <div><span>倍数</span><select id="multiplierInput"></select></div><div><span>需支付</span><strong id="payAmount">0.00</strong></div>
+            <div><span>奖金范围</span><strong id="bonusRange">0.00 - 0.00</strong></div>
           </div>
-          <div>
-            <span>注数</span>
-            <strong id="ticketCount">0</strong>
+          <div class="submit-row">
+            <select id="nameSelect" aria-label="提交人"><option value="">选择人名</option><option value="强">强</option><option value="浩">浩</option><option value="芝">芝</option><option value="甜">甜</option><option value="尤">尤</option><option value="custom">自填</option></select>
+            <input id="customNameInput" type="text" maxlength="24" placeholder="自填姓名">
+            <button id="submitBetBtn" type="button" class="submit-button">提交</button><span id="submitStatus" class="submit-status"></span>
           </div>
-          <div>
-            <span>倍数</span>
-            <select id="multiplierInput"></select>
-          </div>
-          <div>
-            <span>需支付</span>
-            <strong id="payAmount">0.00</strong>
-          </div>
-          <div>
-            <span>奖金范围</span>
-            <strong id="bonusRange">0.00 - 0.00</strong>
-          </div>
-        </div>
-        <div class="submit-row">
-          <select id="nameSelect" aria-label="提交人">
-            <option value="">选择人名</option>
-            <option value="强">强</option>
-            <option value="浩">浩</option>
-            <option value="芝">芝</option>
-            <option value="甜">甜</option>
-            <option value="尤">尤</option>
-            <option value="custom">自填</option>
-          </select>
-          <input id="customNameInput" type="text" maxlength="24" placeholder="自填姓名">
-          <button id="submitBetBtn" type="button" class="submit-button">提交</button>
-          <span id="submitStatus" class="submit-status"></span>
-        </div>
+        </section>
+        <section id="matchList" class="match-list"></section>
+        <section class="table-wrap legacy-table"><table><tbody id="matchBody"><tr><td class="empty">正在加载数据</td></tr></tbody></table></section>
       </section>
 
-      <section id="matchList" class="match-list">
-      </section>
-
-      <section class="table-wrap legacy-table">
-        <table>
-          <thead>
-            <tr>
-              <th>编号</th>
-              <th>赛事</th>
-              <th>比赛</th>
-              <th>截止</th>
-              <th>胜平负</th>
-              <th>让球胜平负</th>
-            </tr>
-          </thead>
-          <tbody id="matchBody">
-            <tr><td colspan="6" class="empty">正在加载数据</td></tr>
-          </tbody>
-        </table>
+      <section class="tab-panel submissions-panel" data-panel="submissions" hidden>
+        <section class="admin-toolbar"><h1>选单结果</h1><button id="adminRefreshBtn" type="button" class="refresh-button">刷新</button></section>
+        <section class="admin-filters">
+          <label><span>提交人</span><select id="nameFilter"><option value="">全部</option></select></label>
+          <label><span>类型</span><select id="typeFilter"><option value="">全部</option></select></label>
+        </section>
+        <section id="payerSummary" class="payer-summary"></section>
+        <section id="submissionList" class="submission-list"><div class="panel-empty">正在读取</div></section>
       </section>
     </main>
-
+    <script src="/tabs.js"></script>
     <script src="/app.js"></script>
+    <script src="/admin.js"></script>
+    <script src="/live.js"></script>
+    <script src="/analysis.js"></script>
   </body>
 </html>

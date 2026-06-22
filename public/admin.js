@@ -1,3 +1,4 @@
+(function submissionsModule() {
 const listEl = document.querySelector("#submissionList");
 const summaryEl = document.querySelector("#payerSummary");
 const refreshBtn = document.querySelector("#adminRefreshBtn");
@@ -200,3 +201,4 @@ listEl.addEventListener("click", async (event) => {
   }
 });
 loadSubmissions();
+})();

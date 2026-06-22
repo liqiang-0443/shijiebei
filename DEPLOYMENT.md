@@ -163,3 +163,16 @@ sudo systemctl status worldcup-odds
 - `data/submissions.json`
 
 生产环境建议用 `DATA_DIR` 指到独立持久化目录。
+# World Cup Workbench Deployment
+
+The application now uses one workbench URL for live scores, analysis, selections,
+and today's records. The analysis tab requires an OpenAI API key; without one,
+all other tabs still work and the analysis tab reports that no analysis is available.
+
+```bash
+export OPENAI_API_KEY='replace-with-your-key'
+curl -fsSL https://raw.githubusercontent.com/liqiang-0443/shijiebei/main/scripts/deploy-vps.sh | bash
+```
+
+The script keeps submissions and analysis snapshots in `/data/shijiebei` across
+redeployments. Do not commit the key or place it in browser code.
