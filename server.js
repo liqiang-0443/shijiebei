@@ -5,6 +5,7 @@ const {
   formatChinaDate,
   getChinaDateOffset,
 } = require("./lib/china-time");
+const { parseLiveMatches, livePayload } = require("./lib/live-results");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -16,6 +17,7 @@ const SOURCES = [
   { key: "hh", name: "混合过关", url: `${SOURCE_BASE}?playid=312&g=2` },
 ];
 const SOURCE_URL = SOURCES[0].url;
+const LIVE_SOURCE_URL = "https://live.500.com/";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -31,6 +33,7 @@ let cache = {
   matches: [],
   previousByKey: {},
 };
+let liveCache = livePayload([], null, "live data has not been synchronized");
 
 function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -68,6 +71,30 @@ function readSubmissions() {
 function writeSubmissions(submissions) {
   ensureDataDir();
   fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions.slice(-1000), null, 2), "utf8");
+}
+
+function getLiveFile(date) {
+  return path.join(DATA_DIR, `live-${date}.json`);
+}
+
+function readLiveCache(date) {
+  ensureDataDir();
+  const file = getLiveFile(date);
+  if (!fs.existsSync(file)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return Array.isArray(parsed.matches) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLiveCache(date, payload) {
+  ensureDataDir();
+  const file = getLiveFile(date);
+  const temp = `${file}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(payload, null, 2), "utf8");
+  fs.renameSync(temp, file);
 }
 
 function readJsonBody(req) {
@@ -369,6 +396,31 @@ async function refreshData() {
   }
 }
 
+async function refreshLiveResults() {
+  const date = getTodayChinaDate();
+  const refreshedAt = new Date().toISOString();
+  try {
+    const html = await fetchSourceHtml(LIVE_SOURCE_URL);
+    const matches = parseLiveMatches(html, date);
+    const payload = {
+      ...livePayload(matches, refreshedAt),
+      date,
+    };
+    writeLiveCache(date, payload);
+    liveCache = payload;
+    return liveCache;
+  } catch (error) {
+    const fallback = liveCache.date === date ? liveCache : readLiveCache(date);
+    liveCache = {
+      ...(fallback || { date, matches: [], updatedAt: null }),
+      ok: false,
+      stale: true,
+      error: error.message || String(error),
+    };
+    return liveCache;
+  }
+}
+
 function sendJson(res, data, status = 200) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
@@ -415,6 +467,10 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, readHistory());
     return;
   }
+  if (url.pathname === "/api/live-matches" && req.method === "GET") {
+    sendJson(res, liveCache);
+    return;
+  }
   if (url.pathname === "/api/submissions" && req.method === "GET") {
     const today = getTodayChinaDate();
     const submissions = readSubmissions()
@@ -452,10 +508,12 @@ const server = http.createServer(async (req, res) => {
 });
 
 ensureDataDir();
-refreshData().then(() => {
+liveCache = readLiveCache(getTodayChinaDate()) || liveCache;
+Promise.all([refreshData(), refreshLiveResults()]).then(() => {
   server.listen(PORT, () => {
     console.log(`World Cup odds PoC running at http://localhost:${PORT}`);
   });
 });
 
 setInterval(refreshData, 5 * 60 * 1000);
+setInterval(refreshLiveResults, 60 * 1000);
