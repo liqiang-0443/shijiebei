@@ -12,6 +12,8 @@ const {
   worldCupEventsForChinaDate,
   chinaDateTime,
   parse500LiveMatches,
+  fifaEventsForChinaDate,
+  normalizeFifaLiveMatch,
 } = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot, generateFallbackAnalysisSnapshot } = require("./lib/analysis-service");
@@ -30,6 +32,7 @@ const SOURCES = [
 const SOURCE_URL = SOURCES[0].url;
 const SPORTS_DB_BASE = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php";
 const SCORE_PAGE_BASE = "https://live.500.com/wanchang.php";
+const FIFA_MATCHES_BASE = "https://api.fifa.com/api/v3/calendar/matches";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -476,18 +479,20 @@ async function refreshLiveResults() {
   const date = getTodayChinaDate();
   const refreshedAt = new Date().toISOString();
   try {
-    const pageDates = [getChinaDateOffset(-1), date];
-    const payloads = [];
-    for (const pageDate of pageDates) {
-      const html = await fetchSourceHtml(`${SCORE_PAGE_BASE}?e=${pageDate}`);
-      payloads.push(parse500LiveMatches(html, date));
-    }
+    const from = getChinaDateOffset(-1);
+    const to = getChinaDateOffset(1);
+    const response = await fetch(`${FIFA_MATCHES_BASE}?idCompetition=17&from=${from}&to=${to}&language=en&count=100`, {
+      headers: { "User-Agent": "WorldCupOddsPoc/1.0", Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`FIFA live source returned ${response.status}`);
+    const body = await response.json();
+    const payloads = fifaEventsForChinaDate(body.Results, date).map(normalizeFifaLiveMatch);
     const byKey = new Map();
     payloads.flat().forEach((match) => {
       byKey.set(match.key, match);
     });
     const matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-    if (!matches.length) throw new Error("no live matches parsed from official score page");
+    if (!matches.length) throw new Error("no live matches parsed from FIFA source");
     const payload = {
       ...livePayload(matches, refreshedAt),
       date,
@@ -496,6 +501,24 @@ async function refreshLiveResults() {
     liveCache = payload;
     return liveCache;
   } catch (error) {
+    try {
+      const pageDates = [getChinaDateOffset(-1), date];
+      const fallbackMatches = [];
+      for (const pageDate of pageDates) {
+        const html = await fetchSourceHtml(`${SCORE_PAGE_BASE}?e=${pageDate}`);
+        fallbackMatches.push(...parse500LiveMatches(html, date));
+      }
+      if (fallbackMatches.length) {
+        const payload = {
+          ...livePayload(fallbackMatches, refreshedAt, error.message || String(error)),
+          date,
+          source: "500-fallback",
+        };
+        writeLiveCache(date, payload);
+        liveCache = payload;
+        return liveCache;
+      }
+    } catch {}
     const cached = liveCache.date === date ? liveCache : readLiveCache(date);
     const fallback = cached && {
       ...cached,

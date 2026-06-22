@@ -8,6 +8,8 @@ const {
   formatLiveProgress,
   worldCupEventsForChinaDate,
   parse500LiveMatches,
+  normalizeFifaLiveMatch,
+  fifaEventsForChinaDate,
 } = require("../lib/live-results");
 
 test("normalizes a live score and minute", () => {
@@ -125,4 +127,29 @@ test("parses the official score page by its displayed Beijing kickoff date", () 
     matchNum: "",
     scheduledAt: "2026-06-22 00:00",
   }]);
+});
+
+test("uses FIFA official World Cup scores for the Beijing matchday", () => {
+  const event = {
+    IdCompetition: "17",
+    IdMatch: "400021483",
+    Date: "2026-06-21T16:00:00Z",
+    MatchStatus: 0,
+    Home: { Score: 4, TeamName: [{ Description: "Spain" }] },
+    Away: { Score: 0, TeamName: [{ Description: "Saudi Arabia" }] },
+  };
+
+  assert.deepEqual(fifaEventsForChinaDate([event], "2026-06-22"), [event]);
+  assert.deepEqual(normalizeFifaLiveMatch(event), {
+    key: "fifa-400021483",
+    home: "西班牙",
+    away: "沙特",
+    score: { home: 4, away: 0 },
+    status: "finished",
+    minute: null,
+    progressText: "已完成",
+    events: [],
+    scheduledAt: "2026-06-22 00:00",
+    sourceTimestamp: "2026-06-21T16:00:00Z",
+  });
 });
