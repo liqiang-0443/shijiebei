@@ -1628,6 +1628,56 @@ tbody tr:hover {
   list-style: none;
 }
 
+.intel-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #dfe7ee;
+  border-radius: 8px;
+  background: #f8fbfb;
+}
+
+.intel-panel > div {
+  min-width: 0;
+}
+
+.intel-panel span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.intel-panel strong,
+.intel-panel em {
+  color: var(--text);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.intel-panel ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding-left: 16px;
+  color: #44505e;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.intel-panel p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #8a5b00;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .prediction-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1718,6 +1768,7 @@ tbody tr:hover {
     padding: 12px 10px;
   }
 
+  .intel-panel,
   .prediction-grid,
   .analysis-notes {
     grid-template-columns: 1fr;

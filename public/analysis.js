@@ -23,6 +23,27 @@
     return `<div class="prediction-item"><span>${escapeHtml(label)}</span><strong class="${emphasis ? "prediction-emphasis" : ""}">${list.map(escapeHtml).join(" / ")}</strong></div>`;
   }
 
+  function infoList(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return `<em>暂无</em>`;
+    return `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+  }
+
+  function intelligenceHtml(statistics, dataGaps) {
+    const stats = statistics || {};
+    const ranking = stats.worldCupRanking;
+    const record = stats.tournamentRecord;
+    const recent = stats.recentForm || {};
+    const gaps = Array.isArray(dataGaps) ? dataGaps : [];
+    return `<section class="intel-panel">
+      <div><span>世界杯排名</span><strong>${ranking ? `${escapeHtml(ranking.home)} / ${escapeHtml(ranking.away)}` : "暂无"}</strong></div>
+      <div><span>本届战绩</span><strong>${record ? `${escapeHtml(record.home)} / ${escapeHtml(record.away)}` : "暂无"}</strong></div>
+      <div><span>近期赛果</span>${infoList([...(recent.home || []), ...(recent.away || [])].slice(0, 4))}</div>
+      <div><span>历史交锋</span>${infoList(stats.headToHead)}</div>
+      ${gaps.length ? `<p>${gaps.map(escapeHtml).join("；")}</p>` : ""}
+    </section>`;
+  }
+
   function analysisCardHtml(fact) {
     const analysis = fact.analysis;
     if (!analysis) {
@@ -31,6 +52,7 @@
     return `<article class="analysis-card">
       <header><span class="match-code">${escapeHtml(fact.matchNum || "-")}</span><h2>${escapeHtml(fact.home)} VS ${escapeHtml(fact.away)}</h2><em>信心 ${escapeHtml(analysis.confidence)}</em></header>
       <p class="analysis-meta">${escapeHtml(fact.matchDate || "")} ${escapeHtml(fact.matchTime || "")} ${fact.handicap ? `让球 ${escapeHtml(fact.handicap)}` : ""}</p>
+      ${intelligenceHtml(fact.statistics, fact.dataGaps)}
       <div class="prediction-grid">
         ${predictionHtml("胜平负", analysis.result, true)}
         ${predictionHtml("让球胜平负", analysis.handicap, true)}

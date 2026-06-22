@@ -10,6 +10,7 @@ const { livePayload, normalizeTheSportsDbEvent } = require("./lib/live-results")
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot } = require("./lib/analysis-service");
 const { latestSnapshotForDate } = require("./lib/odds-cache");
+const { buildTeamIntelligence } = require("./lib/team-intel");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -507,8 +508,11 @@ async function refreshLiveResults() {
   }
 }
 
-function buildAnalysisFacts() {
-  return cache.matches.map((match) => ({
+async function buildAnalysisFacts() {
+  const intelligence = await buildTeamIntelligence(cache.matches).catch(() => new Map());
+  return cache.matches.map((match) => {
+    const teamIntel = intelligence.get(match.key) || {};
+    return {
     key: match.key,
     matchNum: match.matchNum,
     home: match.home,
@@ -517,14 +521,15 @@ function buildAnalysisFacts() {
     matchTime: match.matchTime,
     handicap: match.rangqiu,
     odds: match.odds,
-    statistics: {
+    statistics: teamIntel.statistics || {
       worldCupRanking: null,
       tournamentRecord: null,
       recentForm: null,
       headToHead: null,
     },
-    dataGaps: ["球队统计数据源尚未同步，本版仅基于赔率快照。"],
-  }));
+    dataGaps: teamIntel.dataGaps || ["球队统计数据源暂时不可用，本场仅基于赔率快照。"],
+  };
+  });
 }
 
 function latestAnalysis(store) {
@@ -545,7 +550,7 @@ async function refreshAnalysis({ force = false } = {}) {
   }
 
   try {
-    const facts = buildAnalysisFacts();
+    const facts = await buildAnalysisFacts();
     const snapshot = facts.length
       ? await generateAnalysisSnapshot({
         apiKey: process.env.DEEPSEEK_API_KEY || "",
