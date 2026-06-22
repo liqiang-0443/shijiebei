@@ -34,6 +34,17 @@ function formatTime(value) {
   }).format(new Date(value));
 }
 
+function matchSortValue(matchNum) {
+  const digits = String(matchNum || "").match(/\d+/g);
+  return digits && digits.length ? Number(digits[digits.length - 1]) : Number.POSITIVE_INFINITY;
+}
+
+function sortMatchGroups(a, b) {
+  const diff = matchSortValue(a.matchNum) - matchSortValue(b.matchNum);
+  if (diff) return diff;
+  return String(a.teams || "").localeCompare(String(b.teams || ""), "zh-CN");
+}
+
 function groupSelectionsByMatch(selections) {
   const groups = new Map();
   (selections || []).forEach((pick) => {
@@ -47,7 +58,7 @@ function groupSelectionsByMatch(selections) {
     }
     groups.get(key).picks.push(pick);
   });
-  return [...groups.values()];
+  return [...groups.values()].sort(sortMatchGroups);
 }
 
 function passModeBadges(modes) {
