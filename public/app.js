@@ -40,6 +40,7 @@ const el = {
   clearSelectionBtn: document.querySelector("#clearSelectionBtn"),
   nameSelect: document.querySelector("#nameSelect"),
   customNameInput: document.querySelector("#customNameInput"),
+  submitRow: document.querySelector(".submit-row"),
   submitBetBtn: document.querySelector("#submitBetBtn"),
   submitStatus: document.querySelector("#submitStatus"),
   matchList: document.querySelector("#matchList"),
@@ -527,8 +528,14 @@ el.refreshBtn.addEventListener("click", () => loadData(true));
 el.searchInput?.addEventListener("input", render);
 el.typeSelect.addEventListener("change", render);
 el.multiplierInput.addEventListener("change", updateSummary);
+function syncCustomNameLayout() {
+  const isCustomName = el.nameSelect.value === "custom";
+  el.customNameInput.classList.toggle("show", isCustomName);
+  el.submitRow.classList.toggle("has-custom-name", isCustomName);
+}
+
 el.nameSelect.addEventListener("change", () => {
-  el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
+  syncCustomNameLayout();
   setSubmitStatus("");
   updateSummary();
 });
@@ -585,7 +592,7 @@ el.matchList.addEventListener("click", (event) => {
   updateSummary();
 });
 
-el.customNameInput.classList.toggle("show", el.nameSelect.value === "custom");
+syncCustomNameLayout();
 initMultiplierOptions();
 loadData();
 setInterval(loadData, 60 * 1000);

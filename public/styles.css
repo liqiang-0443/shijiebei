@@ -2427,14 +2427,75 @@ tbody tr:hover {
     width: calc(100% - 20px);
     overflow: hidden;
     border: 1px solid rgba(16, 39, 32, 0.10);
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .summary-top {
+    gap: 6px;
+  }
+
+  .pass-modes {
+    gap: 4px;
+  }
+
+  .pass-mode {
+    height: 30px;
+    border-radius: 9px;
+    padding: 0 5px;
+    font-size: 11px;
+  }
+
+  .bet-summary .ghost-button {
+    width: 52px;
+    min-width: 52px;
+    height: 30px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .selected-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 84px;
+    gap: 4px;
+  }
+
+  .selected-chip {
+    min-height: 38px;
+    padding: 5px 6px;
+    border-radius: 9px;
+  }
+
+  .selected-chip span {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .selected-chip strong,
+  .selected-chip em {
+    font-size: 11px;
+    line-height: 1.15;
   }
 
   .summary-main {
+    grid-template-columns: 0.65fr 0.65fr 0.85fr 1fr 1.55fr;
+    gap: 4px;
     padding: 2px 2px 0;
+  }
+
+  .summary-main > div {
+    gap: 2px;
+  }
+
+  .summary-main span {
+    font-size: 10px;
   }
 
   .summary-main strong {
     color: #102720;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: nowrap;
   }
 
   .summary-main #payAmount,
@@ -2443,22 +2504,61 @@ tbody tr:hover {
   }
 
   .submit-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 78px;
-    gap: 7px;
-    padding: 8px;
+    grid-template-columns: minmax(0, 1fr) 78px;
+    column-gap: 7px;
+    row-gap: 3px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .submit-row.has-custom-name {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) 68px;
+  }
+
+  .bet-summary input,
+  .bet-summary select,
+  #nameSelect,
+  #customNameInput,
+  #multiplierInput {
+    height: 34px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .bet-summary select {
+    background-position:
+      calc(100% - 15px) 14px,
+      calc(100% - 10px) 14px;
   }
 
   .submit-button {
     width: 78px;
     min-width: 78px;
-    height: 42px;
-    border-radius: 12px;
-    font-size: 14px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .submit-row.has-custom-name .submit-button {
+    width: 68px;
+    min-width: 68px;
   }
 
   .submit-button:disabled {
     background: #e5ebe8;
     color: #8a9691;
+  }
+
+  .submit-status {
+    grid-column: 1 / -1;
+    min-height: 0;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .submit-status:empty {
+    display: none;
   }
 
   .admin-filters {
