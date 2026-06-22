@@ -1584,7 +1584,8 @@ tbody tr:hover {
 
 .live-scoreboard {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 72px minmax(0, 1fr) max-content;
+  grid-template-columns: 54px minmax(0, 1fr) 72px minmax(0, 1fr);
+  position: relative;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -1618,12 +1619,18 @@ tbody tr:hover {
 }
 
 .live-scoreboard .live-status {
-  margin-left: 0;
-  padding: 5px 8px;
-  border-radius: 4px;
-  background: #edf2f5;
-  color: #566572;
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  margin: 0;
+  min-width: 58px;
+  padding: 5px 10px;
+  border-radius: 0 8px 0 6px;
+  background: #e8eff7;
+  color: #506b88;
   font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .live-kickoff {
@@ -1680,6 +1687,16 @@ tbody tr:hover {
 
 .live-scoreboard.is-live .live-status {
   background: #fde8e6;
+}
+
+.live-scoreboard .live-status.halftime {
+  background: #fff1d8;
+  color: #976513;
+}
+
+.live-scoreboard .live-status.postponed {
+  background: #f2eaf0;
+  color: #89536f;
 }
 
 .live-scoreboard .live-events {
@@ -1975,9 +1992,9 @@ tbody tr:hover {
   }
 
   .live-scoreboard .live-status {
-    grid-column: 2 / -1;
-    grid-row: 2;
     font-size: 11px;
+    min-width: 52px;
+    padding: 4px 7px;
   }
 
   .live-team {
