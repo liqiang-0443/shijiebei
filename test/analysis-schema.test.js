@@ -34,3 +34,20 @@ test("rejects a half full time prediction outside the nine outcomes", () => {
     }],
   }), /halfFull/);
 });
+
+test("normalizes a compact total-goals range from model output", () => {
+  const result = validateAnalysis({
+    matches: [{
+      key: "m1",
+      result: "主胜",
+      handicap: "让胜",
+      goals: ["2-3球"],
+      scores: ["1:0", "2:0", "2:1"],
+      halfFull: ["胜胜"],
+      confidence: "低",
+      evidence: ["赔率低位集中在主胜小比分"],
+      risks: ["仅基于赔率快照"],
+    }],
+  });
+  assert.deepEqual(result.matches[0].goals, ["2球", "3球"]);
+});

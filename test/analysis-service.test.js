@@ -42,5 +42,6 @@ test("uses DeepSeek V4 Pro through its chat completions endpoint", async () => {
   });
   assert.equal(request.url, "https://api.deepseek.com/chat/completions");
   assert.equal(request.options.model, "deepseek-v4-pro");
+  assert.match(JSON.stringify(request.options.messages), /json/i);
   assert.equal(result.status, "ready");
 });
