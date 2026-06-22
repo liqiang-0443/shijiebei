@@ -86,6 +86,23 @@ test("normalizes a string total-goals prediction from model output", () => {
   assert.deepEqual(result.matches[0].goals, ["2球", "3球"]);
 });
 
+test("normalizes broader model total-goals ranges to selectable outcomes", () => {
+  const result = validateAnalysis({
+    matches: [{
+      key: "m1",
+      result: "主胜",
+      handicap: "让胜",
+      goals: ["2-4球", "3/4/5球", "大2.5球"],
+      scores: ["2:0", "2:1", "3:1"],
+      halfFull: ["胜胜"],
+      confidence: "低",
+      evidence: ["进球赔率集中"],
+      risks: ["仅基于赔率快照"],
+    }],
+  });
+  assert.deepEqual(result.matches[0].goals, ["2球", "3球", "4球"]);
+});
+
 test("normalizes evidence and risks from flexible model output", () => {
   const result = validateAnalysis({
     matches: [{

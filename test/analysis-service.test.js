@@ -45,3 +45,25 @@ test("uses DeepSeek V4 Pro through its chat completions endpoint", async () => {
   assert.match(JSON.stringify(request.options.messages), /json/i);
   assert.equal(result.status, "ready");
 });
+
+test("accepts broader model total-goals wording from DeepSeek responses", async () => {
+  const result = await generateAnalysisSnapshot({
+    apiKey: "test-key",
+    facts: [{ key: "m1" }],
+    slot: "2026-06-22T16:10",
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({
+          matches: [{
+            key: "m1", result: "主胜", handicap: "让负", goals: ["2-4球"],
+            scores: ["1:1", "2:1", "1:0"], halfFull: ["平胜"], confidence: "中",
+            evidence: ["赔率倾向"], risks: ["样本不足"],
+          }],
+        }) } }],
+      }),
+    }),
+  });
+  assert.equal(result.status, "ready");
+  assert.deepEqual(result.analysis.matches[0].goals, ["2球", "3球", "4球"]);
+});
