@@ -29,15 +29,32 @@
     return `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
   }
 
+  function recordTable(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return `<em>暂无</em>`;
+    return `<table class="tournament-table">
+      <thead><tr><th>球队</th><th>FIFA</th><th>小组</th><th>赛</th><th>胜平负</th><th>进失</th><th>净胜</th><th>分</th></tr></thead>
+      <tbody>${list.map((row) => `<tr>
+        <td>${escapeHtml(row.team || "")}</td>
+        <td>${escapeHtml(row.fifaRanking || "暂无")}</td>
+        <td>${escapeHtml(row.groupStanding || "暂无")}</td>
+        <td>${escapeHtml(row.played ?? 0)}</td>
+        <td>${escapeHtml(`${row.win ?? 0}-${row.draw ?? 0}-${row.loss ?? 0}`)}</td>
+        <td>${escapeHtml(`${row.goalsFor ?? 0}-${row.goalsAgainst ?? 0}`)}</td>
+        <td>${escapeHtml(row.goalDifference ?? 0)}</td>
+        <td>${escapeHtml(row.points ?? 0)}</td>
+      </tr>`).join("")}</tbody>
+    </table>`;
+  }
+
   function intelligenceHtml(statistics, dataGaps) {
     const stats = statistics || {};
-    const ranking = stats.worldCupRanking;
-    const record = stats.tournamentRecord;
+    const ranking = stats.fifaRanking;
     const recent = stats.recentForm || {};
     const gaps = Array.isArray(dataGaps) ? dataGaps : [];
     return `<section class="intel-panel">
-      <div><span>世界杯排名</span><strong>${ranking ? `${escapeHtml(ranking.home)} / ${escapeHtml(ranking.away)}` : "暂无"}</strong></div>
-      <div><span>本届战绩</span><strong>${record ? `${escapeHtml(record.home)} / ${escapeHtml(record.away)}` : "暂无"}</strong></div>
+      <div><span>FIFA排名</span><strong>${ranking ? `${escapeHtml(ranking.home)} / ${escapeHtml(ranking.away)}` : "暂无"}</strong></div>
+      <div class="record-table-wrap"><span>本届战绩</span>${recordTable(stats.tournamentTable)}</div>
       <div><span>近期赛果</span>${infoList([...(recent.home || []), ...(recent.away || [])].slice(0, 4))}</div>
       <div><span>历史交锋</span>${infoList(stats.headToHead)}</div>
       ${gaps.length ? `<p>${gaps.map(escapeHtml).join("；")}</p>` : ""}

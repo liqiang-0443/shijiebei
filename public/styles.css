@@ -1643,6 +1643,10 @@ tbody tr:hover {
   min-width: 0;
 }
 
+.intel-panel .record-table-wrap {
+  grid-column: 1 / -1;
+}
+
 .intel-panel span {
   display: block;
   margin-bottom: 4px;
@@ -1676,6 +1680,53 @@ tbody tr:hover {
   color: #8a5b00;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.tournament-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid #e4eaf1;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.tournament-table th,
+.tournament-table td {
+  padding: 6px 5px;
+  border-bottom: 1px solid #edf1f5;
+  color: #44505e;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.tournament-table th {
+  position: static;
+  background: #f1f4f7;
+  font-weight: 800;
+}
+
+.tournament-table th:first-child,
+.tournament-table td:first-child {
+  width: 14%;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.tournament-table th:nth-child(2),
+.tournament-table td:nth-child(2),
+.tournament-table th:nth-child(3),
+.tournament-table td:nth-child(3) {
+  width: 22%;
+}
+
+.tournament-table tr:last-child td {
+  border-bottom: 0;
 }
 
 .prediction-grid {

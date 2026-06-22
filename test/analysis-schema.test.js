@@ -85,3 +85,21 @@ test("normalizes a string total-goals prediction from model output", () => {
   });
   assert.deepEqual(result.matches[0].goals, ["2球", "3球"]);
 });
+
+test("normalizes evidence and risks from flexible model output", () => {
+  const result = validateAnalysis({
+    matches: [{
+      key: "m1",
+      result: "主胜",
+      handicap: "让胜",
+      goals: ["2球"],
+      scores: ["1:0", "2:0", "2:1"],
+      halfFull: ["胜胜"],
+      confidence: "低",
+      evidence: "FIFA排名优势；本届首战取胜；赔率支持主胜；比分低赔集中；额外说明",
+      risks: ["样本少", "历史交锋缺失", "赔率波动", "额外风险"],
+    }],
+  });
+  assert.deepEqual(result.matches[0].evidence, ["FIFA排名优势", "本届首战取胜", "赔率支持主胜", "比分低赔集中"]);
+  assert.deepEqual(result.matches[0].risks, ["样本少", "历史交锋缺失", "赔率波动"]);
+});
