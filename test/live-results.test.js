@@ -7,6 +7,7 @@ const {
   normalizeTheSportsDbEvent,
   formatLiveProgress,
   worldCupEventsForChinaDate,
+  parse500LiveMatches,
 } = require("../lib/live-results");
 
 test("normalizes a live score and minute", () => {
@@ -98,4 +99,30 @@ test("keeps only World Cup events whose source time is Beijing today", () => {
   ], "2026-06-22");
 
   assert.deepEqual(matches.map((event) => event.idEvent), ["today"]);
+});
+
+test("parses the official score page by its displayed Beijing kickoff date", () => {
+  const html = `
+    <tr id="a1359210" gy="世界杯,西班牙,沙特" lid="110">
+      <td>世界杯</td><td>第2轮</td><td>06-22 00:00</td><td><span>完</span></td>
+      <td><span>[03]</span><a><span>西班牙</span></a></td>
+      <td><div class="pk"><a>4</a><a>两球半/三球</a><a>0</a></div></td>
+      <td><a><span>沙特</span></a><span>[02]</span></td><td class="red">3 - 0</td>
+    </tr>
+    <tr id="a1359211" gy="世界杯,昨天队,另一队" lid="110">
+      <td>世界杯</td><td>第2轮</td><td>06-21 12:00</td><td><span>完</span></td>
+      <td><a>昨天队</a></td><td></td><td><a>另一队</a></td><td>1 - 0</td>
+    </tr>`;
+
+  assert.deepEqual(parse500LiveMatches(html, "2026-06-22"), [{
+    key: "500-1359210",
+    home: "西班牙",
+    away: "沙特",
+    score: { home: 3, away: 0 },
+    status: "finished",
+    minute: null,
+    events: [],
+    matchNum: "",
+    scheduledAt: "2026-06-22 00:00",
+  }]);
 });

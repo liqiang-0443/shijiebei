@@ -11,6 +11,7 @@ const {
   normalizeTheSportsDbEvent,
   worldCupEventsForChinaDate,
   chinaDateTime,
+  parse500LiveMatches,
 } = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot, generateFallbackAnalysisSnapshot } = require("./lib/analysis-service");
@@ -28,6 +29,7 @@ const SOURCES = [
 ];
 const SOURCE_URL = SOURCES[0].url;
 const SPORTS_DB_BASE = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php";
+const SCORE_PAGE_BASE = "https://live.500.com/wanchang.php";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -474,26 +476,18 @@ async function refreshLiveResults() {
   const date = getTodayChinaDate();
   const refreshedAt = new Date().toISOString();
   try {
-    const target = new Date(`${date}T12:00:00.000Z`);
-    const previous = new Date(target.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const next = new Date(target.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const sourceDates = [...new Set([previous, date, next])];
-    const fetchEventsDay = async (sourceDate) => {
-      const response = await fetch(`${SPORTS_DB_BASE}?d=${sourceDate}&s=Soccer`, {
-        headers: { "User-Agent": "WorldCupOddsPoc/1.0" },
-      });
-      if (!response.ok) throw new Error(`live source returned ${response.status}`);
-      const body = await response.json();
-      return Array.isArray(body.events) ? body.events : [];
-    };
+    const pageDates = [getChinaDateOffset(-1), date];
     const payloads = [];
-    for (const sourceDate of sourceDates) payloads.push(await fetchEventsDay(sourceDate));
+    for (const pageDate of pageDates) {
+      const html = await fetchSourceHtml(`${SCORE_PAGE_BASE}?e=${pageDate}`);
+      payloads.push(parse500LiveMatches(html, date));
+    }
     const byKey = new Map();
-    worldCupEventsForChinaDate(payloads.flat(), date).forEach((event) => {
-      const match = normalizeTheSportsDbEvent(event);
+    payloads.flat().forEach((match) => {
       byKey.set(match.key, match);
     });
     const matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    if (!matches.length) throw new Error("no live matches parsed from official score page");
     const payload = {
       ...livePayload(matches, refreshedAt),
       date,
@@ -717,12 +711,10 @@ ensureDataDir();
 cache = restoreOddsCache(getTomorrowChinaDate()) || cache;
 liveCache = readLiveCache(getTodayChinaDate()) || liveCache;
 analysisCache = latestAnalysis(readAnalysisStore(getTomorrowChinaDate()));
-refreshData().then(async () => {
-  await Promise.all([refreshLiveResults(), refreshAnalysis()]);
-  server.listen(PORT, () => {
-    console.log(`World Cup odds PoC running at http://localhost:${PORT}`);
-  });
+server.listen(PORT, () => {
+  console.log(`World Cup odds PoC running at http://localhost:${PORT}`);
 });
+refreshData().then(() => Promise.all([refreshLiveResults(), refreshAnalysis()])).catch(() => {});
 
 setInterval(refreshData, 5 * 60 * 1000);
 setInterval(refreshLiveResults, 60 * 1000);
