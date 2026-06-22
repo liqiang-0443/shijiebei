@@ -4,7 +4,8 @@
   "private": true,
   "description": "World Cup sports lottery odds PoC with local submission admin.",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"

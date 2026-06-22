@@ -1,6 +1,10 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const {
+  formatChinaDate,
+  getChinaDateOffset,
+} = require("./lib/china-time");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -292,29 +296,12 @@ function withChanges(matches, previousByKey) {
   });
 }
 
-function formatChinaDate(date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: DISPLAY_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function getTomorrowChinaDate() {
   return getChinaDateOffset(1);
 }
 
 function getTodayChinaDate() {
   return getChinaDateOffset(0);
-}
-
-function getChinaDateOffset(offsetDays) {
-  const now = new Date();
-  const target = new Date(now.getTime() + offsetDays * 24 * 60 * 60 * 1000);
-  return formatChinaDate(target);
 }
 
 async function fetchSourceHtml(url) {
