@@ -153,3 +153,18 @@ test("uses FIFA official World Cup scores for the Beijing matchday", () => {
     sourceTimestamp: "2026-06-21T16:00:00Z",
   });
 });
+
+test("reports a live FIFA match with its current half and minute", () => {
+  const match = normalizeFifaLiveMatch({
+    IdMatch: "live-1",
+    Date: "2026-06-22T01:00:00Z",
+    MatchStatus: 2,
+    MatchTime: "63'",
+    Home: { Score: 1, TeamName: [{ Description: "Spain" }] },
+    Away: { Score: 0, TeamName: [{ Description: "Saudi Arabia" }] },
+  });
+
+  assert.equal(match.status, "second_half");
+  assert.equal(match.minute, 63);
+  assert.equal(match.progressText, "下半场 63'");
+});
