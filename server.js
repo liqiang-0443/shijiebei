@@ -9,7 +9,7 @@ const {
 } = require("./lib/china-time");
 const { livePayload, normalizeTheSportsDbEvent } = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
-const { generateAnalysisSnapshot } = require("./lib/analysis-service");
+const { generateAnalysisSnapshot, generateFallbackAnalysisSnapshot } = require("./lib/analysis-service");
 const { latestSnapshotForDate } = require("./lib/odds-cache");
 const { buildTeamIntelligence } = require("./lib/team-intel");
 
@@ -126,6 +126,11 @@ function writeSubmissions(submissions) {
 
 function getLiveFile(date) {
   return path.join(DATA_DIR, `live-${date}.json`);
+}
+
+function alignDisplayDate(match, date) {
+  if (!match.scheduledAt || match.scheduledAt.startsWith(date)) return match;
+  return { ...match, scheduledAt: `${date} ${match.scheduledAt.slice(11)}` };
 }
 
 function readLiveCache(date) {
@@ -530,7 +535,18 @@ async function refreshLiveResults() {
       const match = normalizeTheSportsDbEvent(event);
       byKey.set(match.key, match);
     });
-    const matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    let matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    if (matches.length < 4) {
+      const targetEnd = new Date(`${date}T16:00:00.000Z`);
+      matches = payloads
+        .flat()
+        .filter((event) => event.strLeague === "FIFA World Cup" && event.strTimestamp)
+        .filter((event) => new Date(`${event.strTimestamp}Z`) <= targetEnd)
+        .sort((a, b) => new Date(`${b.strTimestamp}Z`) - new Date(`${a.strTimestamp}Z`))
+        .slice(0, 4)
+        .map((event) => alignDisplayDate(normalizeTheSportsDbEvent(event), date))
+        .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    }
     const payload = {
       ...livePayload(matches, refreshedAt),
       date,
@@ -597,7 +613,7 @@ async function refreshAnalysis({ force = false } = {}) {
 
   try {
     const facts = await buildAnalysisFacts();
-    const snapshot = facts.length
+    let snapshot = facts.length
       ? await generateAnalysisSnapshot({
         apiKey: process.env.DEEPSEEK_API_KEY || "",
         facts,
@@ -605,6 +621,9 @@ async function refreshAnalysis({ force = false } = {}) {
         model: process.env.DEEPSEEK_MODEL || undefined,
       })
       : { status: "unavailable", reason: "no tomorrow World Cup matches", slot };
+    if (facts.length && snapshot.status === "unavailable") {
+      snapshot = generateFallbackAnalysisSnapshot({ facts, slot, reason: snapshot.reason });
+    }
     const record = {
       ...snapshot,
       date,
@@ -617,12 +636,24 @@ async function refreshAnalysis({ force = false } = {}) {
     analysisCache = record;
     return analysisCache;
   } catch (error) {
-    const previous = latestAnalysis(store);
-    analysisCache = {
-      ...previous,
+    const facts = await buildAnalysisFacts().catch(() => []);
+    const fallback = facts.length
+      ? generateFallbackAnalysisSnapshot({ facts, slot, reason: error.message || String(error) })
+      : latestAnalysis(store);
+    const record = {
+      ...fallback,
+      date,
+      dataUpdatedAt: cache.fetchedAt || null,
+      facts,
       stale: true,
       error: error.message || String(error),
     };
+    if (facts.length) {
+      store.snapshots.push(record);
+      store.snapshots = store.snapshots.slice(-18);
+      writeAnalysisStore(date, store);
+    }
+    analysisCache = record;
     return analysisCache;
   }
 }
