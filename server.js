@@ -683,6 +683,10 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, liveCache);
     return;
   }
+  if (url.pathname === "/api/live-matches/refresh" && req.method === "GET") {
+    sendJson(res, await refreshLiveResults());
+    return;
+  }
   if (url.pathname === "/api/match-analysis" && req.method === "GET") {
     sendJson(res, analysisCache);
     return;
