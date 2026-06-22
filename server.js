@@ -5,6 +5,7 @@ const {
   formatChinaDate,
   getChinaDateOffset,
   getAnalysisSlot,
+  isAnalysisDue,
 } = require("./lib/china-time");
 const { livePayload, normalizeTheSportsDbEvent } = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
@@ -484,16 +485,13 @@ async function refreshData() {
 }
 
 async function refreshLiveResults() {
-  const today = getTodayChinaDate();
-  const historyToday = latestSnapshotForDate(readHistory(), today);
+  const date = getTodayChinaDate();
+  const historyToday = latestSnapshotForDate(readHistory(), date);
   const expectedToday = [
-    ...cache.matches.filter((match) => match.matchDate === today),
-    ...((historyToday?.matches || []).filter((match) => match.matchDate === today)),
+    ...cache.matches.filter((match) => match.matchDate === date),
+    ...((historyToday?.matches || []).filter((match) => match.matchDate === date)),
   ];
-  const date = expectedToday.length >= 3 ? today : (cache.displayDate || today);
-  const expectedMatches = date === today && expectedToday.length
-    ? expectedToday
-    : cache.matches.filter((match) => match.matchDate === date);
+  const expectedMatches = expectedToday;
   const refreshedAt = new Date().toISOString();
   try {
     const target = new Date(`${date}T12:00:00.000Z`);
@@ -588,6 +586,10 @@ async function refreshAnalysis({ force = false } = {}) {
   const date = getTomorrowChinaDate();
   const slot = getAnalysisSlot();
   const store = readAnalysisStore(date);
+  if (!force && !isAnalysisDue()) {
+    analysisCache = latestAnalysis(store);
+    return analysisCache;
+  }
   if (!force && !shouldRunAnalysis(store.snapshots, slot, { retryNoMatches: cache.matches.length > 0 })) {
     analysisCache = latestAnalysis(store);
     return analysisCache;
