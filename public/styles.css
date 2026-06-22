@@ -1588,15 +1588,28 @@ tbody tr:hover {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  border: 1px solid var(--line);
+  min-height: 94px;
+  border: 1px solid #d9e1e8;
+  border-left: 5px solid #60798a;
   border-radius: 8px;
-  background: var(--panel);
-  padding: 13px 14px;
+  background: #ffffff;
+  padding: 18px 16px;
+  box-shadow: 0 3px 10px rgba(26, 42, 51, 0.05);
 }
 
 .live-scoreboard.is-live {
   border-color: #e1a6a2;
+  border-left-color: #b72521;
   background: #fffafa;
+}
+
+[data-panel="live"] .tab-heading {
+  margin: 2px 0 12px;
+  padding: 14px;
+  border: 1px solid #dbe6e8;
+  border-left: 5px solid #177d7c;
+  border-radius: 8px;
+  background: #f2f8f8;
 }
 
 .live-kickoff,
@@ -1606,6 +1619,11 @@ tbody tr:hover {
 
 .live-scoreboard .live-status {
   margin-left: 0;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: #edf2f5;
+  color: #566572;
+  font-size: 12px;
 }
 
 .live-kickoff {
@@ -1615,22 +1633,34 @@ tbody tr:hover {
 }
 
 .live-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.live-home { text-align: right; }
-.live-away { text-align: left; }
+.live-home { justify-content: flex-end; text-align: right; }
+.live-away { justify-content: flex-start; text-align: left; }
+
+.team-flag {
+  flex: 0 0 auto;
+  width: 25px;
+  height: 18px;
+  border: 1px solid rgba(51, 72, 86, 0.16);
+  border-radius: 2px;
+  object-fit: cover;
+}
 
 .live-score {
   min-width: 72px;
   color: #25333e;
-  font-size: 21px;
+  font-size: 26px;
   line-height: 1;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -1641,6 +1671,15 @@ tbody tr:hover {
 .live-scoreboard .live-status.second_half,
 .live-scoreboard .live-status.live {
   color: #b72521;
+}
+
+.live-scoreboard .live-status.finished {
+  background: #edf5ef;
+  color: #397047;
+}
+
+.live-scoreboard.is-live .live-status {
+  background: #fde8e6;
 }
 
 .live-scoreboard .live-events {
@@ -1931,7 +1970,8 @@ tbody tr:hover {
     border-right: 0;
     border-left: 0;
     border-radius: 0;
-    padding: 13px 8px;
+    min-height: 88px;
+    padding: 16px 8px;
   }
 
   .live-scoreboard .live-status {
@@ -1941,8 +1981,11 @@ tbody tr:hover {
   }
 
   .live-team {
-    font-size: 14px;
+    gap: 4px;
+    font-size: 15px;
   }
+
+  .team-flag { width: 22px; height: 16px; }
 
   .live-score {
     min-width: 58px;

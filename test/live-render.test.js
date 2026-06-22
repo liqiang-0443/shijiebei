@@ -16,6 +16,8 @@ test("renders a compact score row without the unused match code", () => {
   assert.doesNotMatch(html, /match-code/);
   assert.match(html, /西班牙/);
   assert.match(html, /4 : 0/);
+  assert.match(html, /flagcdn\.com\/w40\/es\.png/);
+  assert.match(html, /flagcdn\.com\/w40\/sa\.png/);
 });
 
 test("highlights a live score row with its current stage", () => {

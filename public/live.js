@@ -8,6 +8,13 @@
     finished: "完场",
     postponed: "延期",
   };
+  const teamFlagCodes = {
+    "西班牙": "es", "沙特": "sa", "比利时": "be", "伊朗": "ir",
+    "乌拉圭": "uy", "佛得角": "cv", "新西兰": "nz", "埃及": "eg",
+    "厄瓜多尔": "ec", "库拉索": "cw", "突尼斯": "tn", "日本": "jp",
+    "阿根廷": "ar", "奥地利": "at", "法国": "fr", "伊拉克": "iq",
+    "挪威": "no", "塞内加尔": "sn", "约旦": "jo", "阿尔及利亚": "dz",
+  };
   let timer = null;
 
   function escapeHtml(value) {
@@ -19,13 +26,20 @@
     return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
   }
 
+  function teamHtml(name, side) {
+    const flag = teamFlagCodes[name];
+    const team = `<span class="team-name">${escapeHtml(name)}</span>`;
+    const flagIcon = flag ? `<img class="team-flag" src="https://flagcdn.com/w40/${flag}.png" alt="">` : "";
+    return `<div class="live-team live-${side}">${side === "home" ? `${team}${flagIcon}` : `${flagIcon}${team}`}</div>`;
+  }
+
   function liveCardHtml(match) {
     const status = statusLabels[match.status] || "未开赛";
     const progress = match.progressText || (match.minute ? `${status} ${match.minute}'` : status);
     const events = (match.events || []).map((event) => `<li>${escapeHtml(event.minute || "")} ${escapeHtml(event.type || "")} ${escapeHtml(event.text || "")}</li>`).join("");
     const live = ["first_half", "halftime", "second_half", "live"].includes(match.status);
     const kickoff = String(match.scheduledAt || "").slice(11) || "-";
-    return `<article class="live-scoreboard ${live ? "is-live" : ""}"><time class="live-kickoff">${escapeHtml(kickoff)}</time><div class="live-team live-home">${escapeHtml(match.home)}</div><strong class="live-score">${match.score?.home ?? 0} : ${match.score?.away ?? 0}</strong><div class="live-team live-away">${escapeHtml(match.away)}</div><span class="live-status ${escapeHtml(match.status)}">${escapeHtml(progress)}</span>${events ? `<ul class="live-events">${events}</ul>` : ""}</article>`;
+    return `<article class="live-scoreboard ${live ? "is-live" : ""}"><time class="live-kickoff">${escapeHtml(kickoff)}</time>${teamHtml(match.home, "home")}<strong class="live-score">${match.score?.home ?? 0} : ${match.score?.away ?? 0}</strong>${teamHtml(match.away, "away")}<span class="live-status ${escapeHtml(match.status)}">${escapeHtml(progress)}</span>${events ? `<ul class="live-events">${events}</ul>` : ""}</article>`;
   }
 
   if (typeof module !== "undefined") module.exports = { liveCardHtml };
