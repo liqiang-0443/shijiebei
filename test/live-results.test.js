@@ -1,6 +1,12 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { normalizeLiveMatch, livePayload, parseLiveMatches, normalizeTheSportsDbEvent } = require("../lib/live-results");
+const {
+  normalizeLiveMatch,
+  livePayload,
+  parseLiveMatches,
+  normalizeTheSportsDbEvent,
+  formatLiveProgress,
+} = require("../lib/live-results");
 
 test("normalizes a live score and minute", () => {
   const match = normalizeLiveMatch({
@@ -59,15 +65,26 @@ test("normalizes a TheSportsDB World Cup live event", () => {
     intHomeScore: "1",
     intAwayScore: "0",
     strStatus: "1H",
+    strProgress: "23",
     strTimestamp: "2026-06-22T01:00:00",
   }), {
     key: "thesportsdb-2391755",
-    home: "New Zealand",
-    away: "Egypt",
+    home: "新西兰",
+    away: "埃及",
     score: { home: 1, away: 0 },
     status: "first_half",
-    minute: null,
+    minute: 23,
+    progressText: "上半场 23'",
     events: [],
-    scheduledAt: "2026-06-22T01:00:00",
+    scheduledAt: "2026-06-22 09:00",
+    sourceTimestamp: "2026-06-22T01:00:00",
   });
+});
+
+test("formats live progress by match stage and minute", () => {
+  assert.equal(formatLiveProgress({ status: "finished" }), "已完成");
+  assert.equal(formatLiveProgress({ status: "first_half", minute: 18 }), "上半场 18'");
+  assert.equal(formatLiveProgress({ status: "halftime" }), "中场休息");
+  assert.equal(formatLiveProgress({ status: "second_half", minute: 62 }), "下半场 62'");
+  assert.equal(formatLiveProgress({ status: "scheduled" }), "未开始");
 });

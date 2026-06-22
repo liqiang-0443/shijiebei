@@ -20,7 +20,7 @@
 
   function cardHtml(match) {
     const status = statusLabels[match.status] || "未开赛";
-    const progress = match.minute ? `${match.minute}' ${status}` : status;
+    const progress = match.progressText || (match.minute ? `${status} ${match.minute}'` : status);
     const events = (match.events || []).map((event) => `<li>${escapeHtml(event.minute || "")} ${escapeHtml(event.type || "")} ${escapeHtml(event.text || "")}</li>`).join("");
     return `<article class="live-card"><header><span class="match-code">${escapeHtml(match.matchNum || "-")}</span><span class="live-status ${escapeHtml(match.status)}">${escapeHtml(progress)}</span></header><h2>${escapeHtml(match.home)} <strong>${match.score?.home ?? 0} : ${match.score?.away ?? 0}</strong> ${escapeHtml(match.away)}</h2><p>${escapeHtml(match.scheduledAt || "")}</p>${events ? `<ul class="live-events">${events}</ul>` : ""}</article>`;
   }

@@ -23,6 +23,7 @@ const SOURCES = [
 ];
 const SOURCE_URL = SOURCES[0].url;
 const SPORTS_DB_BASE = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php";
+const SPORTS_DB_SEARCH_BASE = "https://www.thesportsdb.com/api/v1/json/3/searchevents.php";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -40,6 +41,23 @@ let cache = {
 };
 let liveCache = livePayload([], null, "live data has not been synchronized");
 let analysisCache = { status: "unavailable", reason: "analysis has not been generated" };
+
+const LIVE_TEAM_NAMES = {
+  "阿根廷": "Argentina",
+  "奥地利": "Austria",
+  "法国": "France",
+  "伊拉克": "Iraq",
+  "挪威": "Norway",
+  "塞内加尔": "Senegal",
+  "约旦": "Jordan",
+  "阿尔及利亚": "Algeria",
+  "比利时": "Belgium",
+  "伊朗": "Iran",
+  "新西兰": "New Zealand",
+  "埃及": "Egypt",
+  "英格兰": "England",
+  "加纳": "Ghana",
+};
 
 function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -466,20 +484,46 @@ async function refreshData() {
 }
 
 async function refreshLiveResults() {
-  const date = getTodayChinaDate();
+  const today = getTodayChinaDate();
+  const historyToday = latestSnapshotForDate(readHistory(), today);
+  const expectedToday = [
+    ...cache.matches.filter((match) => match.matchDate === today),
+    ...((historyToday?.matches || []).filter((match) => match.matchDate === today)),
+  ];
+  const date = expectedToday.length >= 3 ? today : (cache.displayDate || today);
+  const expectedMatches = date === today && expectedToday.length
+    ? expectedToday
+    : cache.matches.filter((match) => match.matchDate === date);
   const refreshedAt = new Date().toISOString();
   try {
     const target = new Date(`${date}T12:00:00.000Z`);
     const previous = new Date(target.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const sourceDates = [date, previous];
-    const payloads = await Promise.all(sourceDates.map(async (sourceDate) => {
+    const next = new Date(target.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const sourceDates = [...new Set([previous, date, next])];
+    const fetchEventsDay = async (sourceDate) => {
       const response = await fetch(`${SPORTS_DB_BASE}?d=${sourceDate}&s=Soccer`, {
         headers: { "User-Agent": "WorldCupOddsPoc/1.0" },
       });
       if (!response.ok) throw new Error(`live source returned ${response.status}`);
       const body = await response.json();
       return Array.isArray(body.events) ? body.events : [];
-    }));
+    };
+    const searchExpectedEvent = async (match) => {
+      const home = LIVE_TEAM_NAMES[match.home] || match.home;
+      const away = LIVE_TEAM_NAMES[match.away] || match.away;
+      const query = `${home}_vs_${away}`;
+      const response = await fetch(`${SPORTS_DB_SEARCH_BASE}?e=${encodeURIComponent(query)}`, {
+        headers: { "User-Agent": "WorldCupOddsPoc/1.0" },
+      });
+      if (!response.ok) return [];
+      const body = await response.json();
+      return Array.isArray(body.event) ? body.event : [];
+    };
+    const payloads = [];
+    for (const sourceDate of sourceDates) payloads.push(await fetchEventsDay(sourceDate));
+    if (expectedMatches.length) {
+      for (const match of expectedMatches) payloads.push(await searchExpectedEvent(match));
+    }
     const byKey = new Map();
     payloads.flat().forEach((event) => {
       if (event.strLeague !== "FIFA World Cup") return;
