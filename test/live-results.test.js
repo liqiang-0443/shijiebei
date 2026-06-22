@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { normalizeLiveMatch, livePayload, parseLiveMatches } = require("../lib/live-results");
+const { normalizeLiveMatch, livePayload, parseLiveMatches, normalizeTheSportsDbEvent } = require("../lib/live-results");
 
 test("normalizes a live score and minute", () => {
   const match = normalizeLiveMatch({
@@ -49,4 +49,25 @@ test("parses a World Cup live row from the score page", () => {
     minute: null,
     events: [],
   }]);
+});
+
+test("normalizes a TheSportsDB World Cup live event", () => {
+  assert.deepEqual(normalizeTheSportsDbEvent({
+    idEvent: "2391755",
+    strHomeTeam: "New Zealand",
+    strAwayTeam: "Egypt",
+    intHomeScore: "1",
+    intAwayScore: "0",
+    strStatus: "1H",
+    strTimestamp: "2026-06-22T01:00:00",
+  }), {
+    key: "thesportsdb-2391755",
+    home: "New Zealand",
+    away: "Egypt",
+    score: { home: 1, away: 0 },
+    status: "first_half",
+    minute: null,
+    events: [],
+    scheduledAt: "2026-06-22T01:00:00",
+  });
 });

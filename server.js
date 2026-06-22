@@ -6,9 +6,10 @@ const {
   getChinaDateOffset,
   getAnalysisSlot,
 } = require("./lib/china-time");
-const { parseLiveMatches, livePayload } = require("./lib/live-results");
+const { livePayload, normalizeTheSportsDbEvent } = require("./lib/live-results");
 const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot } = require("./lib/analysis-service");
+const { latestSnapshotForDate } = require("./lib/odds-cache");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -20,7 +21,7 @@ const SOURCES = [
   { key: "hh", name: "混合过关", url: `${SOURCE_BASE}?playid=312&g=2` },
 ];
 const SOURCE_URL = SOURCES[0].url;
-const LIVE_SOURCE_URL = "https://live.500.com/";
+const SPORTS_DB_BASE = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php";
 const DISPLAY_LEAGUE = "世界杯";
 const DISPLAY_TIME_ZONE = "Asia/Shanghai";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -61,6 +62,32 @@ function readHistory() {
 function writeHistory(history) {
   ensureDataDir();
   fs.writeFileSync(HISTORY_FILE, JSON.stringify(history.slice(-288), null, 2), "utf8");
+}
+
+function restoreOddsCache(displayDate) {
+  const snapshot = latestSnapshotForDate(readHistory(), displayDate);
+  if (!snapshot) return null;
+  return {
+    ok: true,
+    stale: true,
+    sourceUrl: snapshot.sourceUrl || SOURCE_URL,
+    sources: snapshot.sources || SOURCES,
+    displayDate,
+    fetchedAt: snapshot.fetchedAt,
+    error: "赔率源暂时不可用，正在展示最后一次成功同步的数据。",
+    matches: snapshot.matches.map((match) => ({
+      ...match,
+      league: DISPLAY_LEAGUE,
+      matchDate: match.matchDate || displayDate,
+      matchTime: match.matchTime || "",
+      buyEndTime: match.buyEndTime || "",
+      active: true,
+      ended: false,
+      single: match.single || baseSingle(),
+      changes: match.changes || {},
+    })),
+    previousByKey: {},
+  };
 }
 
 function readSubmissions() {
@@ -412,14 +439,27 @@ async function refreshData() {
         home: match.home,
         away: match.away,
         rangqiu: match.rangqiu,
+        matchDate: match.matchDate,
+        matchTime: match.matchTime,
+        buyEndTime: match.buyEndTime,
         odds: match.odds,
+        single: match.single,
         sourcePages: match.sourcePages,
       })),
     });
     writeHistory(history);
     return cache;
   } catch (error) {
-    cache = { ...cache, ok: false, fetchedAt, error: error.message || String(error) };
+    const fallback = cache.displayDate === displayDate && cache.matches.length
+      ? cache
+      : restoreOddsCache(displayDate);
+    cache = {
+      ...(fallback || cache),
+      ok: Boolean(fallback?.matches.length),
+      stale: Boolean(fallback?.matches.length),
+      lastAttemptAt: fetchedAt,
+      error: error.message || String(error),
+    };
     return cache;
   }
 }
@@ -428,8 +468,26 @@ async function refreshLiveResults() {
   const date = getTodayChinaDate();
   const refreshedAt = new Date().toISOString();
   try {
-    const html = await fetchSourceHtml(LIVE_SOURCE_URL);
-    const matches = parseLiveMatches(html, date);
+    const target = new Date(`${date}T12:00:00.000Z`);
+    const previous = new Date(target.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const sourceDates = [date, previous];
+    const payloads = await Promise.all(sourceDates.map(async (sourceDate) => {
+      const response = await fetch(`${SPORTS_DB_BASE}?d=${sourceDate}&s=Soccer`, {
+        headers: { "User-Agent": "WorldCupOddsPoc/1.0" },
+      });
+      if (!response.ok) throw new Error(`live source returned ${response.status}`);
+      const body = await response.json();
+      return Array.isArray(body.events) ? body.events : [];
+    }));
+    const byKey = new Map();
+    payloads.flat().forEach((event) => {
+      if (event.strLeague !== "FIFA World Cup") return;
+      const timestamp = event.strTimestamp ? new Date(`${event.strTimestamp}Z`) : null;
+      if (!timestamp || formatChinaDate(timestamp) !== date) return;
+      const match = normalizeTheSportsDbEvent(event);
+      byKey.set(match.key, match);
+    });
+    const matches = [...byKey.values()].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
     const payload = {
       ...livePayload(matches, refreshedAt),
       date,
@@ -621,6 +679,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 ensureDataDir();
+cache = restoreOddsCache(getTomorrowChinaDate()) || cache;
 liveCache = readLiveCache(getTodayChinaDate()) || liveCache;
 analysisCache = latestAnalysis(readAnalysisStore(getTomorrowChinaDate()));
 refreshData().then(async () => {
