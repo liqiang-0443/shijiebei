@@ -20,6 +20,7 @@ const { shouldRunAnalysis } = require("./lib/analysis-schedule");
 const { generateAnalysisSnapshot, generateFallbackAnalysisSnapshot } = require("./lib/analysis-service");
 const { latestSnapshotForDate } = require("./lib/odds-cache");
 const { buildTeamIntelligence } = require("./lib/team-intel");
+const { createSingleFlight } = require("./lib/single-flight");
 
 const PORT = process.env.PORT || 4318;
 const SOURCE_BASE = "https://trade.500.com/jczq/";
@@ -51,6 +52,7 @@ let cache = {
 };
 let liveCache = livePayload([], null, "live data has not been synchronized");
 let analysisCache = { status: "unavailable", reason: "analysis has not been generated" };
+const runAnalysisSingleFlight = createSingleFlight();
 
 function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -569,7 +571,11 @@ function latestAnalysis(store) {
   };
 }
 
-async function refreshAnalysis({ force = false } = {}) {
+function refreshAnalysis(options = {}) {
+  return runAnalysisSingleFlight(() => refreshAnalysisInternal(options));
+}
+
+async function refreshAnalysisInternal({ force = false } = {}) {
   const date = getTomorrowChinaDate();
   const slot = getAnalysisSlot();
   const store = readAnalysisStore(date);

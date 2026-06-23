@@ -57,7 +57,7 @@
       <div class="record-table-wrap"><span>本届战绩</span>${recordTable(stats.tournamentTable)}</div>
       <div><span>近期赛果</span>${infoList([...(recent.home || []), ...(recent.away || [])].slice(0, 4))}</div>
       <div><span>近五年国际赛事交锋</span>${infoList(stats.headToHead)}</div>
-      <div><span>伤停信息</span>${stats.injuries ? infoList(stats.injuries) : "<em>暂无可靠公开数据</em>"}</div>
+      <div><span>伤停与首发</span>${stats.injuries ? infoList(stats.injuries) : `<em>${escapeHtml(stats.lineupStatus || "暂无可靠公开数据")}</em>`}</div>
       ${gaps.length ? `<p>${gaps.map(escapeHtml).join("；")}</p>` : ""}
     </section>`;
   }

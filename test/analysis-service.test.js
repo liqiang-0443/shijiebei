@@ -67,3 +67,16 @@ test("accepts broader model total-goals wording from DeepSeek responses", async 
   assert.equal(result.status, "ready");
   assert.deepEqual(result.analysis.matches[0].goals, ["2球", "3球", "4球"]);
 });
+
+test("aborts a stalled model request so scheduled analysis can fall back", async () => {
+  await assert.rejects(generateAnalysisSnapshot({
+    apiKey: "test-key",
+    facts: [{ key: "m1" }],
+    slot: "2026-06-22T06:00",
+    timeoutMs: 10,
+    fetchImpl: async (_url, options) => new Promise((resolve, reject) => {
+      assert.ok(options.signal);
+      options.signal.addEventListener("abort", () => reject(options.signal.reason));
+    }),
+  }), /analysis provider timed out/);
+});

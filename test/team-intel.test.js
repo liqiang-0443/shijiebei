@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildTeamIntelligence } = require("../lib/team-intel");
+const { buildTeamIntelligence, fetchJson } = require("../lib/team-intel");
 
 function response(body) {
   return {
@@ -8,6 +8,17 @@ function response(body) {
     json: async () => body,
   };
 }
+
+test("retries a transient intelligence-source failure once", async () => {
+  let calls = 0;
+  const body = await fetchJson("https://example.test/source", async () => {
+    calls += 1;
+    if (calls === 1) throw new Error("fetch failed");
+    return response({ ok: true });
+  });
+  assert.deepEqual(body, { ok: true });
+  assert.equal(calls, 2);
+});
 
 test("enriches analysis facts with table records, recent form, and head to head", async () => {
   const calls = [];
@@ -155,4 +166,68 @@ test("computes World Cup ranking from daily results when the table endpoint is t
   assert.equal(intel.get("m1").statistics.groupStanding.home, "Group J 第1，积3分");
   assert.equal(intel.get("m1").statistics.groupStanding.away, "Group J 第2，积3分");
   assert.equal(intel.get("m1").statistics.tournamentRecord.home, "1场 1胜0平0负，进3失0，净胜3");
+});
+
+test("resolves current World Cup teams from the standings instead of a fixed team-id list", async () => {
+  const fetchImpl = async (url) => {
+    if (url.includes("lookuptable.php")) {
+      return response({ table: [
+        { idTeam: "133602", strTeam: "Portugal", strGroup: "Group K", intRank: "1", intPlayed: "2", intWin: "2", intDraw: "0", intLoss: "0", intGoalsFor: "5", intGoalsAgainst: "1", intGoalDifference: "4", intPoints: "6", strForm: "WW" },
+        { idTeam: "140572", strTeam: "Uzbekistan", strGroup: "Group K", intRank: "2", intPlayed: "2", intWin: "1", intDraw: "0", intLoss: "1", intGoalsFor: "2", intGoalsAgainst: "3", intGoalDifference: "-1", intPoints: "3", strForm: "WL" },
+      ] });
+    }
+    if (url.includes("api.fifa.com/api/v3/rankings")) {
+      return response({ Results: [
+        { IdCountry: "POR", Rank: 7, TeamName: [{ Description: "Portugal" }] },
+        { IdCountry: "UZB", Rank: 58, TeamName: [{ Description: "Uzbekistan" }] },
+      ] });
+    }
+    if (url.includes("eventslast.php?id=133602")) return response({ results: [] });
+    if (url.includes("eventslast.php?id=140572")) return response({ results: [] });
+    if (url.includes("searchevents.php")) return response({ event: [] });
+    if (url.includes("eventsday.php")) return response({ events: [] });
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const intel = await buildTeamIntelligence([{
+    key: "m-current",
+    home: "葡萄牙",
+    away: "乌兹别克",
+    matchDate: "2026-06-24",
+  }], { fetchImpl });
+
+  const stats = intel.get("m-current").statistics;
+  assert.equal(stats.fifaRanking.home, "FIFA第7");
+  assert.equal(stats.fifaRanking.away, "FIFA第58");
+  assert.equal(stats.tournamentTable[0].played, 2);
+  assert.equal(stats.tournamentTable[1].points, 3);
+});
+
+test("uses official FIFA match results when the third-party standings omit a team", async () => {
+  const fetchImpl = async (url) => {
+    if (url.includes("lookuptable.php")) return response({ table: [] });
+    if (url.includes("api.fifa.com/api/v3/rankings")) return response({ Results: [
+      { IdCountry: "POR", Rank: 5, TeamName: [{ Description: "Portugal" }] },
+      { IdCountry: "UZB", Rank: 50, TeamName: [{ Description: "Uzbekistan" }] },
+    ] });
+    if (url.includes("api.fifa.com/api/v3/calendar/matches")) return response({ Results: [
+      { IdCompetition: "17", Date: "2026-06-17T16:00:00Z", GroupName: [{ Description: "Group K" }], Home: { IdTeam: "p", Score: 2, TeamName: [{ Description: "Portugal" }] }, Away: { IdTeam: "x", Score: 0, TeamName: [{ Description: "Uzbekistan" }] } },
+    ] });
+    if (url.includes("eventslast.php")) return response({ results: [] });
+    if (url.includes("searchevents.php")) return response({ event: [] });
+    if (url.includes("eventsday.php")) return response({ events: [] });
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const intel = await buildTeamIntelligence([{
+    key: "m-fifa",
+    home: "葡萄牙",
+    away: "乌兹别克",
+    matchDate: "2026-06-24",
+  }], { fetchImpl });
+
+  const stats = intel.get("m-fifa").statistics;
+  assert.equal(stats.tournamentTable[0].played, 1);
+  assert.equal(stats.tournamentTable[0].points, 3);
+  assert.equal(stats.tournamentTable[1].played, 1);
 });

@@ -8,8 +8,8 @@ test("tomorrow respects Beijing midnight", () => {
   assert.equal(getChinaDateOffset(1, now), "2026-06-23");
 });
 
-test("analysis slot uses Beijing noon once per day", () => {
-  assert.equal(getAnalysisSlot(new Date("2026-06-22T08:12:00.000Z")), "2026-06-22T12:00");
-  assert.equal(isAnalysisDue(new Date("2026-06-22T03:59:00.000Z")), false);
-  assert.equal(isAnalysisDue(new Date("2026-06-22T04:00:00.000Z")), true);
+test("analysis slot uses Beijing 6am once per day", () => {
+  assert.equal(getAnalysisSlot(new Date("2026-06-21T21:59:00.000Z")), "2026-06-22T06:00");
+  assert.equal(isAnalysisDue(new Date("2026-06-21T21:59:00.000Z")), false);
+  assert.equal(isAnalysisDue(new Date("2026-06-21T22:00:00.000Z")), true);
 });

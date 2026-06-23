@@ -33,8 +33,8 @@ npm start
 
 Open the root URL for four tabs: live scores, tomorrow's analysis, tomorrow's
 selection, and today's submitted selections. The server refreshes odds every five
-minutes, live scores every minute, and analysis snapshots every four hours in
-Beijing time.
+minutes, live scores every minute, and one analysis snapshot each day at 06:00
+Beijing time. A deployment also triggers one fresh snapshot.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for VPS configuration, including the optional
 server-only `DEEPSEEK_API_KEY` required to generate analysis snapshots with
