@@ -157,6 +157,52 @@ test("clicking a payer name toggles the name filter", async () => {
   assert.equal(elements.get("#nameFilter").value, "");
 });
 
+test("payer summary keeps daily totals when the list is name-filtered", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        submissions: [
+          { id: "1", name: "浩", submittedAt: "2026-06-22T05:00:00.000Z", payAmount: 60, selections: [] },
+          { id: "2", name: "芝", submittedAt: "2026-06-22T04:00:00.000Z", payAmount: 24, selections: [] },
+        ],
+      }),
+    }),
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const target = { closest: () => ({ dataset: { filterName: "浩" } }) };
+  elements.get("#submissionList").dispatchEvent({ type: "click", target });
+
+  assert.match(elements.get("#submissionList").innerHTML, /浩/);
+  assert.doesNotMatch(elements.get("#submissionList").innerHTML, /芝/);
+  assert.match(elements.get("#payerSummary").innerHTML, /84\.00/);
+  assert.match(elements.get("#payerSummary").innerHTML, /浩/);
+  assert.match(elements.get("#payerSummary").innerHTML, /60\.00/);
+  assert.match(elements.get("#payerSummary").innerHTML, /芝/);
+  assert.match(elements.get("#payerSummary").innerHTML, /24\.00/);
+});
+
 test("refreshes submissions whenever the submissions tab is entered", async () => {
   const elements = new Map();
   ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter", ".workbench"].forEach((selector) => {

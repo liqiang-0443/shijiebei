@@ -140,7 +140,7 @@ function renderPayerSummary(submissions) {
 }
 
 function render(submissions) {
-  renderPayerSummary(submissions);
+  renderPayerSummary(allSubmissions);
   if (!submissions.length) {
     listEl.innerHTML = '<div class="panel-empty">暂无提交记录</div>';
     return;
