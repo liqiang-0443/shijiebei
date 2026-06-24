@@ -1468,6 +1468,12 @@ tbody tr:hover {
     padding: 8px;
   }
 
+  .payer-summary-item {
+    height: auto;
+    min-height: 74px;
+    align-content: center;
+  }
+
   .submission-head {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
