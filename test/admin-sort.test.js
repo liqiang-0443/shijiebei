@@ -4,12 +4,18 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 function createElement() {
+  const listeners = {};
   return {
     disabled: false,
     innerHTML: "",
     textContent: "",
     value: "",
-    addEventListener() {},
+    addEventListener(type, handler) {
+      listeners[type] = handler;
+    },
+    dispatchEvent(event) {
+      return listeners[event.type]?.(event);
+    },
   };
 }
 
@@ -64,4 +70,89 @@ test("submission matches render in match number order", async () => {
   assert.deepEqual(positions.map((position) => position >= 0), [true, true, true]);
   assert.ok(positions[0] < positions[1]);
   assert.ok(positions[1] < positions[2]);
+});
+
+test("submissions render grouped by payer name", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        submissions: [
+          { id: "3", name: "芝", submittedAt: "2026-06-22T03:00:00.000Z", payAmount: 2, selections: [] },
+          { id: "1", name: "强", submittedAt: "2026-06-22T05:00:00.000Z", payAmount: 2, selections: [] },
+          { id: "2", name: "浩", submittedAt: "2026-06-22T04:00:00.000Z", payAmount: 2, selections: [] },
+          { id: "4", name: "强", submittedAt: "2026-06-22T06:00:00.000Z", payAmount: 2, selections: [] },
+        ],
+      }),
+    }),
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const html = elements.get("#submissionList").innerHTML;
+  const names = [...html.matchAll(/class="submission-name"[^>]*data-filter-name="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(names, ["浩", "强", "强", "芝"]);
+});
+
+test("clicking a payer name toggles the name filter", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        submissions: [
+          { id: "1", name: "强", submittedAt: "2026-06-22T05:00:00.000Z", payAmount: 2, selections: [] },
+          { id: "2", name: "浩", submittedAt: "2026-06-22T04:00:00.000Z", payAmount: 2, selections: [] },
+        ],
+      }),
+    }),
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const target = { closest: () => ({ dataset: { filterName: "浩" } }) };
+  elements.get("#submissionList").dispatchEvent({ type: "click", target });
+  assert.equal(elements.get("#nameFilter").value, "浩");
+  assert.match(elements.get("#submissionList").innerHTML, /浩/);
+  assert.doesNotMatch(elements.get("#submissionList").innerHTML, /强/);
+
+  elements.get("#submissionList").dispatchEvent({ type: "click", target });
+  assert.equal(elements.get("#nameFilter").value, "");
 });

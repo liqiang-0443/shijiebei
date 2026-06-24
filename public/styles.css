@@ -804,10 +804,18 @@ tbody tr:hover {
   display: grid;
   gap: 4px;
   min-width: 0;
+  width: 100%;
   border: 1px solid #e4eaf1;
   border-radius: 8px;
   padding: 9px 10px;
   background: #fbfcfd;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payer-summary-item:hover {
+  border-color: #b72521;
+  background: #fff8f7;
 }
 
 .payer-summary-item span,
@@ -870,9 +878,22 @@ tbody tr:hover {
   min-width: 0;
 }
 
-.submission-head strong {
+.submission-name {
+  appearance: none;
+  width: fit-content;
+  max-width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
   color: var(--text);
   font-size: 17px;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+}
+
+.submission-name:hover {
+  color: #b72521;
 }
 
 .submission-head span,

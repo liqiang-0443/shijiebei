@@ -12,6 +12,19 @@ const {
   fifaEventsForChinaDate,
 } = require("../lib/live-results");
 
+test("translates current FIFA live team names to Chinese", () => {
+  const match = normalizeFifaLiveMatch({
+    IdMatch: "live-2",
+    Date: "2026-06-23T16:00:00Z",
+    MatchStatus: 0,
+    Home: { Score: 2, TeamName: [{ Description: "Portugal" }] },
+    Away: { Score: 1, TeamName: [{ Description: "Uzbekistan" }] },
+  });
+
+  assert.equal(match.home, "葡萄牙");
+  assert.equal(match.away, "乌兹别克");
+});
+
 test("normalizes a live score and minute", () => {
   const match = normalizeLiveMatch({
     id: "f1",

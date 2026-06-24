@@ -45,6 +45,17 @@ function sortMatchGroups(a, b) {
   return String(a.teams || "").localeCompare(String(b.teams || ""), "zh-CN");
 }
 
+function payerName(item) {
+  return item.name || "未命名";
+}
+
+function sortSubmissionsByName(submissions) {
+  return [...submissions].sort((a, b) => (
+    payerName(a).localeCompare(payerName(b), "zh-CN")
+    || new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
+  ));
+}
+
 function groupSelectionsByMatch(selections) {
   const groups = new Map();
   (selections || []).forEach((pick) => {
@@ -82,7 +93,7 @@ function populateFilters(submissions) {
 function filteredSubmissions() {
   const name = nameFilter.value;
   const type = typeFilter.value;
-  return allSubmissions.filter((item) => {
+  return sortSubmissionsByName(allSubmissions).filter((item) => {
     const nameOk = !name || (item.name || "未命名") === name;
     const typeOk = !type || (item.passModes || []).includes(type);
     return nameOk && typeOk;
@@ -91,6 +102,11 @@ function filteredSubmissions() {
 
 function applyFilters() {
   render(filteredSubmissions());
+}
+
+function toggleNameFilter(name) {
+  nameFilter.value = nameFilter.value === name ? "" : name;
+  applyFilters();
 }
 
 function renderPayerSummary(submissions) {
@@ -113,11 +129,11 @@ function renderPayerSummary(submissions) {
     </div>
     <div class="payer-summary-list">
       ${rows.length ? rows.map((item) => `
-        <div class="payer-summary-item">
+        <button class="payer-summary-item" type="button" data-filter-name="${escapeHtml(item.name)}">
           <span>${escapeHtml(item.name)}</span>
           <strong>${item.amount.toFixed(2)} 元</strong>
           <em>${item.count} 单</em>
-        </div>
+        </button>
       `).join("") : '<div class="payer-summary-empty">暂无提交</div>'}
     </div>
   `;
@@ -134,7 +150,7 @@ function render(submissions) {
     <article class="submission-card">
       <div class="submission-head">
         <div>
-          <strong>${escapeHtml(item.name)}</strong>
+          <button class="submission-name" type="button" data-filter-name="${escapeHtml(payerName(item))}">${escapeHtml(payerName(item))}</button>
           <span>${formatTime(item.submittedAt)}</span>
         </div>
         <div class="submission-money">
@@ -190,7 +206,17 @@ async function loadSubmissions() {
 refreshBtn.addEventListener("click", loadSubmissions);
 nameFilter.addEventListener("change", applyFilters);
 typeFilter.addEventListener("change", applyFilters);
+summaryEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-filter-name]");
+  if (!button) return;
+  toggleNameFilter(button.dataset.filterName);
+});
 listEl.addEventListener("click", async (event) => {
+  const filterButton = event.target.closest("[data-filter-name]");
+  if (filterButton) {
+    toggleNameFilter(filterButton.dataset.filterName);
+    return;
+  }
   const button = event.target.closest("[data-delete-id]");
   if (!button) return;
   const confirmed = window.confirm("确认删除这条提交记录？");
