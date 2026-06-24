@@ -156,3 +156,45 @@ test("clicking a payer name toggles the name filter", async () => {
   elements.get("#submissionList").dispatchEvent({ type: "click", target });
   assert.equal(elements.get("#nameFilter").value, "");
 });
+
+test("refreshes submissions whenever the submissions tab is entered", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter", ".workbench"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+  let fetchCount = 0;
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => {
+      fetchCount += 1;
+      return {
+        ok: true,
+        json: async () => ({ ok: true, submissions: [] }),
+      };
+    },
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(fetchCount, 1);
+
+  elements.get(".workbench").dispatchEvent({ type: "worldcup:tabchange", detail: { active: "analysis" } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(fetchCount, 1);
+
+  elements.get(".workbench").dispatchEvent({ type: "worldcup:tabchange", detail: { active: "submissions" } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(fetchCount, 2);
+});

@@ -206,6 +206,9 @@ async function loadSubmissions() {
 refreshBtn.addEventListener("click", loadSubmissions);
 nameFilter.addEventListener("change", applyFilters);
 typeFilter.addEventListener("change", applyFilters);
+document.querySelector(".workbench")?.addEventListener("worldcup:tabchange", (event) => {
+  if (event.detail.active === "submissions") loadSubmissions();
+});
 summaryEl.addEventListener("click", (event) => {
   const button = event.target.closest("[data-filter-name]");
   if (!button) return;
