@@ -1,4 +1,5 @@
 const STORAGE_KEY = "worldcup-odds-poc-selection";
+const MAX_PASS_MODE = 8;
 
 function readStoredState() {
   try {
@@ -242,7 +243,7 @@ function availablePassModes() {
   const matchCount = groupSelections(selections).length;
   const modes = [];
   if (selections.some((item) => item.single)) modes.push(1);
-  for (let mode = 2; mode <= Math.min(4, matchCount); mode += 1) {
+  for (let mode = 2; mode <= Math.min(MAX_PASS_MODE, matchCount); mode += 1) {
     modes.push(mode);
   }
   return modes;
@@ -266,7 +267,8 @@ function normalizePassModes() {
 function renderPassModes() {
   normalizePassModes();
   const available = new Set(availablePassModes());
-  const maxModes = [1, 2, 3, 4];
+  const renderMaxMode = Math.max(4, ...available);
+  const maxModes = Array.from({ length: renderMaxMode }, (_, index) => index + 1);
   el.passModes.innerHTML = maxModes.map((mode) => {
     const enabled = available.has(mode);
     const active = state.passModes.has(mode);
