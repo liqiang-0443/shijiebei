@@ -85,7 +85,7 @@ async function renderPassModesForMatchCount(matchCount) {
     setInterval() {},
   });
 
-  vm.runInContext(fs.readFileSync("public/app.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/app.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
 

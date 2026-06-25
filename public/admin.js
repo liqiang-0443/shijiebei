@@ -7,14 +7,6 @@ const typeFilter = document.querySelector("#typeFilter");
 
 let allSubmissions = [];
 
-const poolLabels = {
-  nspf: "胜平负",
-  spf: "让球胜平负",
-  jqs: "总进球数",
-  bqc: "半全场",
-  bf: "比分",
-};
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -70,6 +62,41 @@ function groupSelectionsByMatch(selections) {
     groups.get(key).picks.push(pick);
   });
   return [...groups.values()].sort(sortMatchGroups);
+}
+
+function splitTeams(teams) {
+  const parts = String(teams || "").split(/\s+VS\s+/i);
+  return { home: parts[0] || teams || "-", away: parts[1] || "" };
+}
+
+function passModeValues(modes) {
+  return (modes || []).map((mode) => {
+    if (mode === "单关") return 1;
+    const match = String(mode).match(/(\d+)\s*串\s*1/);
+    return match ? Number(match[1]) : null;
+  }).filter(Boolean);
+}
+
+function calculatedBonusRange(item) {
+  if (!globalThis.WorldCupBetting || !item.selections?.length) return item.bonusRange || "-";
+  const modes = passModeValues(item.passModes);
+  if (!modes.length) return item.bonusRange || "-";
+  const range = globalThis.WorldCupBetting.estimateBonusRange(item.selections, modes, item.multiplier || 1);
+  return `${range.minBonus.toFixed(2)} - ${range.maxBonus.toFixed(2)}`;
+}
+
+function choiceLabel(pick) {
+  const label = String(pick.label || "").trim();
+  if (!label) return "";
+  const pool = String(pick.pool || "").toLowerCase();
+  if ((pool === "spf" || pool === "rqspf") && !label.includes("【让】")) {
+    return `${label}【让】`;
+  }
+  return label;
+}
+
+function choiceText(picks) {
+  return picks.map(choiceLabel).filter(Boolean).join(",") || "-";
 }
 
 function passModeBadges(modes) {
@@ -147,8 +174,8 @@ function render(submissions) {
   }
 
   listEl.innerHTML = submissions.map((item) => `
-    <article class="submission-card">
-      <div class="submission-head">
+    <article class="submission-card submission-ticket">
+      <div class="submission-head ticket-head">
         <div>
           <button class="submission-name" type="button" data-filter-name="${escapeHtml(payerName(item))}">${escapeHtml(payerName(item))}</button>
           <span>${formatTime(item.submittedAt)}</span>
@@ -163,20 +190,14 @@ function render(submissions) {
         <span>已选 ${item.selectedCount || 0}</span>
         <span>注数 ${item.ticketCount || 0}</span>
         <span class="multiplier-pill">倍数 <b>${item.multiplier || 1}</b></span>
-        <span>奖金 ${escapeHtml(item.bonusRange || "-")}</span>
+        <span>奖金 ${escapeHtml(calculatedBonusRange(item))}</span>
       </div>
       <div class="submission-picks">
         ${groupSelectionsByMatch(item.selections).map((group) => `
-          <section class="submission-match">
-            <h3><em>${escapeHtml(String(group.matchNum || "").replace(/[^\d]/g, "") || group.matchNum)}</em><span>${escapeHtml(group.teams)}</span></h3>
-            <div>
-              ${group.picks.map((pick) => `
-                <span class="pick-pill">
-                  <i>${escapeHtml(poolLabels[pick.pool] || pick.pool)}</i>
-                  <strong>${escapeHtml(pick.label)}</strong>
-                  <b>${Number(pick.sp || 0).toFixed(2)}</b>
-                </span>
-              `).join("")}
+          <section class="submission-match ticket-match-row">
+            <h3 class="ticket-match-code"><em>${escapeHtml(String(group.matchNum || "").replace(/[^\d]/g, "") || group.matchNum)}</em><span>${escapeHtml(group.teams)}</span></h3>
+            <div class="ticket-choice-box">
+              <span class="ticket-choice-text">${escapeHtml(choiceText(group.picks))}</span>
             </div>
           </section>
         `).join("")}

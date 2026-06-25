@@ -62,7 +62,7 @@ test("submission matches render in match number order", async () => {
     window: { confirm: () => false },
   });
 
-  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
 
   const html = elements.get("#submissionList").innerHTML;
@@ -105,7 +105,7 @@ test("submissions render grouped by payer name", async () => {
     window: { confirm: () => false },
   });
 
-  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
 
   const html = elements.get("#submissionList").innerHTML;
@@ -144,7 +144,7 @@ test("clicking a payer name toggles the name filter", async () => {
     window: { confirm: () => false },
   });
 
-  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
 
   const target = { closest: () => ({ dataset: { filterName: "浩" } }) };
@@ -188,7 +188,7 @@ test("payer summary keeps daily totals when the list is name-filtered", async ()
     window: { confirm: () => false },
   });
 
-  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
 
   const target = { closest: () => ({ dataset: { filterName: "浩" } }) };
@@ -232,7 +232,7 @@ test("refreshes submissions whenever the submissions tab is entered", async () =
     window: { confirm: () => false },
   });
 
-  vm.runInContext(fs.readFileSync("public/admin.js", "utf8"), context);
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(fetchCount, 1);
 
@@ -243,4 +243,112 @@ test("refreshes submissions whenever the submissions tab is entered", async () =
   elements.get(".workbench").dispatchEvent({ type: "worldcup:tabchange", detail: { active: "submissions" } });
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(fetchCount, 2);
+});
+
+test("submission renders as a ticket-style match list", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        submissions: [{
+          id: "ticket",
+          name: "浩",
+          submittedAt: "2026-06-25T04:00:00.000Z",
+          selectedCount: 2,
+          ticketCount: 1,
+          multiplier: 1,
+          payAmount: 2,
+          passModes: ["2串1"],
+          selections: [
+            { matchKey: "m1", matchNum: "周四055", teams: "厄瓜多尔 VS 德国", pool: "nspf", label: "主胜", value: "3", sp: 2 },
+            { matchKey: "m2", matchNum: "周四056", teams: "库拉索 VS 科特迪瓦", pool: "rqspf", label: "主胜", value: "3", sp: 3 },
+          ],
+        }],
+      }),
+    }),
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const html = elements.get("#submissionList").innerHTML;
+  assert.match(html, /submission-ticket/);
+  assert.match(html, /ticket-match-row/);
+  assert.match(html, /ticket-match-code/);
+  assert.match(html, /ticket-choice-box/);
+  assert.match(html, /厄瓜多尔/);
+  assert.match(html, /德国/);
+  assert.match(html, /主胜【让】/);
+  assert.doesNotMatch(html, /rqspf/);
+  assert.doesNotMatch(html, /让球胜平负/);
+  assert.doesNotMatch(html, /3\.00/);
+});
+
+test("submission bonus range is recalculated with mutually exclusive picks", async () => {
+  const elements = new Map();
+  ["#submissionList", "#payerSummary", "#adminRefreshBtn", "#nameFilter", "#typeFilter"].forEach((selector) => {
+    elements.set(selector, createElement());
+  });
+
+  const context = vm.createContext({
+    document: {
+      querySelector(selector) {
+        return elements.get(selector);
+      },
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        submissions: [{
+          id: "bonus",
+          name: "浩",
+          submittedAt: "2026-06-25T04:00:00.000Z",
+          selectedCount: 3,
+          ticketCount: 2,
+          multiplier: 1,
+          payAmount: 4,
+          bonusRange: "16.00 - 40.00",
+          passModes: ["2串1"],
+          selections: [
+            { key: "m1-win", matchKey: "m1", matchNum: "周四055", teams: "A VS B", pool: "nspf", label: "胜", value: "3", sp: 2 },
+            { key: "m1-draw", matchKey: "m1", matchNum: "周四055", teams: "A VS B", pool: "nspf", label: "平", value: "1", sp: 3 },
+            { key: "m2-win", matchKey: "m2", matchNum: "周四056", teams: "C VS D", pool: "nspf", label: "胜", value: "3", sp: 4 },
+          ],
+        }],
+      }),
+    }),
+    Intl,
+    Date,
+    Number,
+    String,
+    Map,
+    Set,
+    window: { confirm: () => false },
+  });
+
+  vm.runInContext(`${fs.readFileSync("public/betting.js", "utf8")}\n${fs.readFileSync("public/admin.js", "utf8")}`, context);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const html = elements.get("#submissionList").innerHTML;
+  assert.match(html, /奖金 16\.00 - 24\.00/);
+  assert.doesNotMatch(html, /40\.00/);
 });

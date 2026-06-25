@@ -1055,6 +1055,131 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.submission-ticket {
+  gap: 0;
+  border-color: #d7dadd;
+  border-radius: 2px;
+  background: #fff;
+  padding: 0;
+  box-shadow: 0 1px 0 rgba(20, 32, 38, 0.04);
+}
+
+.submission-ticket::before {
+  content: "";
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: #c9c9c9;
+  transform: translateY(-4px);
+}
+
+.ticket-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px 10px;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #ececec;
+}
+
+.ticket-head .submission-name {
+  color: #20272d;
+  font-size: 16px;
+}
+
+.ticket-head > span {
+  color: #8b9198;
+  font-size: 12px;
+}
+
+.ticket-head .pass-mode-badges {
+  justify-content: flex-start;
+}
+
+.ticket-head .submission-money {
+  min-width: 96px;
+}
+
+.ticket-head .submission-money strong {
+  color: #c40022;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.submission-ticket .submission-meta {
+  padding: 8px 14px;
+  border-bottom: 1px solid #ececec;
+}
+
+.submission-ticket .submission-picks {
+  display: block;
+  padding: 0 14px 12px;
+}
+
+.ticket-match-row {
+  display: grid;
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px dashed #d8d8d8;
+  background: transparent;
+  padding: 11px 0 12px;
+}
+
+.ticket-match-row:last-child {
+  border-bottom: 0;
+}
+
+.ticket-match-row .ticket-match-code {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #262b30;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ticket-match-row .ticket-match-code em {
+  width: 46px;
+  min-width: 46px;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: #252a30;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.ticket-match-row .ticket-match-code span {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.ticket-choice-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 42px;
+  margin-left: 78px;
+  border: 1px solid #9fa3a8;
+  background: #f8f8f8;
+  padding: 7px 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ticket-choice-text {
+  color: #c40022;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+  word-break: break-word;
+}
+
 @media (max-width: 860px) {
   .status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -212,30 +212,7 @@ function combinations(items, size) {
 }
 
 function buildTickets(selections) {
-  const modes = [...state.passModes].sort((a, b) => a - b);
-  const grouped = groupSelections(selections);
-  const tickets = [];
-
-  if (modes.includes(1)) {
-    selections.filter((item) => item.single).forEach((item) => {
-      tickets.push({ mode: 1, odds: item.sp });
-    });
-  }
-
-  modes.filter((mode) => mode > 1).forEach((mode) => {
-    combinations(grouped, mode).forEach((groupSet) => {
-      const walk = (index, odds) => {
-        if (index === groupSet.length) {
-          tickets.push({ mode, odds });
-          return;
-        }
-        groupSet[index].forEach((item) => walk(index + 1, odds * item.sp));
-      };
-      walk(0, 1);
-    });
-  });
-
-  return tickets;
+  return WorldCupBetting.buildTickets(selections, state.passModes);
 }
 
 function availablePassModes() {
@@ -296,11 +273,8 @@ function updateSummary() {
   const multiplier = getMultiplier();
   normalizePassModes();
   persistState();
-  const tickets = buildTickets(selections);
+  const { tickets, minBonus, maxBonus } = WorldCupBetting.estimateBonusRange(selections, state.passModes, multiplier);
   const pay = tickets.length * 2 * multiplier;
-  const bonuses = tickets.map((ticket) => ticket.odds * 2 * multiplier);
-  const minBonus = bonuses.length ? Math.min(...bonuses) : 0;
-  const maxBonus = bonuses.reduce((sum, value) => sum + value, 0);
 
   el.selectedCount.textContent = String(selections.length);
   el.ticketCount.textContent = String(tickets.length);
